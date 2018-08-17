@@ -1,11 +1,15 @@
-import re, os, StringIO
+from __future__ import print_function
+import re, os
 import ruamel.yaml
-from mkidreadout.core import caller_name
+from pkg_resources import Requirement, resource_filename
+from mkidcore.utils import caller_name
 from mkidcore.corelog import getLogger, setup_logging
 try:
+    from StringIO import StringIO
     import ConfigParser as configparser
 except ImportError:
     import configparser
+    from io import StringIO
 
 RESERVED = ('._c', '._a')
 
@@ -15,28 +19,36 @@ setup_logging()
 
 
 def defaultconfigfile():
-    return os.path.join(os.path.dirname(__file__),'default.yml')
+    return resource_filename(Requirement.parse("mkidcore"), "default.yml")
 
 
 @ruamel.yaml.yaml_object(yaml)
-class ConfigDict(dict):
+class ConfigThing(dict):
     """
     This Class implements a YAML-backed, nestable configuration object. The general idea is that
     settings are registered, e.g. .register('a.b.c.d', thingA), updated e.g.
     .update('a.b.c.d', thingB), mutated is partially supported e.g .a.b.c.d.append(foo) works if
-    a.b.c.d is a list, but .update would be preferred.
+    a.b.c.d is a list, but .update would be preferred. It is best not to think of this as a
+    dictionary at all!
 
     .get may be used to support both default values (aside from None, which is not supported at
     present) and inheritance, though inheritance is no supported across nodes of other type.
 
-    Under the hood this is implemented as a subclass of dicitionary so many tab completions show
-    up as for python dictionaries and [] access will work...use these with caution!
+    To handle defaults consider, e.g.
+    for thing in config.namespace.thinglist:
+        try:
+            foo = thing.datafile
+        except KeyError:
+            foo = config.namespace.defaultdatafile
 
-    Some functionality that isn't really implemented yet because it isn't supre clear HOW we will
+    Under the hood this is implemented as a subclass of dictionary so many tab completions show
+    up as for python dictionaries and [] access will work...use these with caution! It is probably
+    best not to think of this as a dictionary at all!
+
+    Some functionality that isn't really implemented yet because it isn't clear HOW we will
     want it yet:
      -1 Updating a default load of settings with a subset from a user's file.
      -2 Controlling the breakup of the settings into multiple files.
-
 
     """
     yaml_tag = u'!configdict'
@@ -44,11 +56,11 @@ class ConfigDict(dict):
     def __init__(self, *args):
         """
         If initialized with a list of tuples cannonization is not enforced on values
-        in general you should call ConfigDict().registerfromkvlist() as __init__ will not
+        in general you should call ConfigThing().registerfromkvlist() as __init__ will not
         break dotted keys out into nested namespaces.
         """
         if args:
-            super(ConfigDict, self).update([(cannonizekey(k), v) for k, v in args[0]])
+            super(ConfigThing, self).update([(cannonizekey(k), v) for k, v in args[0]])
         self.__frozen = True
 
     @classmethod
@@ -65,7 +77,7 @@ class ConfigDict(dict):
 
     def dump(self):
         """Dump the config to a YAML string"""
-        out = StringIO.StringIO()
+        out = StringIO()
         yaml.dump(self, out)
         return out.getvalue()
 
@@ -126,7 +138,7 @@ class ConfigDict(dict):
     def __contains__(self, k):
         """Contains only implements explicit keys, inheritance is not checked."""
         k1, _, krest = k.partition('.')
-        if super(ConfigDict, self).__contains__(k1):
+        if super(ConfigThing, self).__contains__(k1):
             if krest:
                 return krest in self[k1]
             return True
@@ -151,12 +163,12 @@ class ConfigDict(dict):
     def keys(self):
         """Hide reserved keys"""
         return filter(lambda x: not (isinstance(x,str) and x.endswith(RESERVED)),
-                      super(ConfigDict, self).keys())
+                      super(ConfigThing, self).keys())
 
     def items(self):
         """Hide reserved keys"""
         return filter(lambda x: not (isinstance(x[0],str) and x[0].endswith(RESERVED)),
-                      super(ConfigDict, self).items())
+                      super(ConfigThing, self).items())
 
     def update(self, key, value, comment=None):
         self.registered(key, error=True)
@@ -176,7 +188,7 @@ class ConfigDict(dict):
     def _register(self, key, initialvalue, allowed=None, comment=None):
         k1, _, krest = key.partition('.')
         if krest:
-            cd = self.get(k1, ConfigDict())
+            cd = self.get(k1, ConfigThing())
             cd._register(krest, initialvalue, allowed=allowed, comment=comment)
             self[k1] = cd
             # getLogger('MKIDConfig').debug('registering {}.{}={}'.format(k1,krest, initialvalue))
@@ -225,7 +237,7 @@ class ConfigDict(dict):
     def todict(self):
         ret = dict(self)
         for k,v in ret.items():
-            if isinstance(v, ConfigDict):
+            if isinstance(v, ConfigThing):
                 ret[k] = v.todict()
         return ret
 
@@ -257,7 +269,7 @@ class ConfigDict(dict):
             self.register(cannonizekey(namespace + k), cannonizevalue(v), update=True)
         return self
 
-yaml.register_class(ConfigDict)
+yaml.register_class(ConfigThing)
 
 def cannonizekey(k):
     """Enforce cannonicity of config keys lowercase, no spaces (replace with underscore)"""
@@ -330,7 +342,7 @@ def _consoladateconfig(cd):
             cd.unregister(k)
         if re.match('sweep\d+', k):
             sweeps.append(cd[k])
-            print cd[k]
+            getLogger('mkidcore.config').debug('Matched sweep#: {}'.format(cd[k]))
             cd[k].register('num', int(k[5:]))
             cd.unregister(k)
     if roaches:
@@ -348,11 +360,11 @@ def load(file, namespace=None):
     elif namespace is None:
         raise ValueError('Namespace required when loading an old config')
     else:
-        return ConfigDict().registerfromconfigparser(loadoldconfig(file), namespace)
+        return ConfigThing().registerfromconfigparser(loadoldconfig(file), namespace)
 
 def ingestoldconfigs(cfiles=('beammap.align.cfg', 'beammap.clean.cfg', 'beammap.sweep.cfg', 'dashboard.cfg',
                              'initgui.cfg', 'powersweep.ml.cfg',  'templar.cfg')):
-    config = ConfigDict()
+    config = ConfigThing()
     for cf in cfiles:
         cp = loadoldconfig(cf)
         config.registerfromconfigparser(cp, cf[:-4])
@@ -365,7 +377,7 @@ def ingestoldconfigs(cfiles=('beammap.align.cfg', 'beammap.clean.cfg', 'beammap.
     return config
 
 
-config = ConfigDict()
+config = ConfigThing()
 
 # c = config = ingestoldconfigs()
 
@@ -386,7 +398,7 @@ config = ConfigDict()
 #     importoldconfig(config, cf, os.path.basename(cf)[:-4])
 #
 # cp = configparser.ConfigParser(); cp.read(cfiles[-1])
-# rs=[ConfigDict().registerfromkvlist(cp.items(rname),'') for rname in cp.sections() if 'Roach' in rname]
+# rs=[ConfigThing().registerfromkvlist(cp.items(rname),'') for rname in cp.sections() if 'Roach' in rname]
 # config.register('templarconf.roaches', rs)
 #
 # out = StringIO.StringIO()
