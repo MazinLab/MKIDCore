@@ -15,6 +15,8 @@ RESERVED = ('._c', '._a')
 
 yaml = ruamel.yaml.YAML()
 
+yaml_object = ruamel.yaml.yaml_object
+
 setup_logging()
 
 
@@ -22,7 +24,8 @@ def defaultconfigfile():
     return resource_filename(Requirement.parse("mkidcore"), "default.yml")
 
 
-@ruamel.yaml.yaml_object(yaml)
+
+@yaml_object(yaml)
 class ConfigThing(dict):
     """
     This Class implements a YAML-backed, nestable configuration object. The general idea is that

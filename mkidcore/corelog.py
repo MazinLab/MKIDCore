@@ -9,7 +9,9 @@ from multiprocessing_logging import install_mp_handler
 # import progressbar
 # progressbar.streams.wrap_stderr()
 
-getLogger = logging.getLogger
+def getLogger(*args,**kwargs):
+    setup_logging()
+    return logging.getLogger(*args, **kwargs)
 
 _setup = False
 
