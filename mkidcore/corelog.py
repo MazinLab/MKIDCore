@@ -3,7 +3,7 @@ import logging
 import logging.config
 import os
 
-import yaml
+import ruamel.yaml as yaml
 from multiprocessing_logging import install_mp_handler
 
 # import progressbar
