@@ -334,7 +334,7 @@ def loadoldconfig(cfgfile):
     return cp
 
 
-def _consoladateconfig(cd):
+def _consolidateconfig(cd):
     """Merge Roach and sweep sections into objects"""
     roaches, sweeps = {}, []
     for k in cd.keys():
@@ -372,10 +372,10 @@ def ingestoldconfigs(cfiles=('beammap.align.cfg', 'beammap.clean.cfg', 'beammap.
         cp = loadoldconfig(cf)
         config.registerfromconfigparser(cp, cf[:-4])
 
-    _consoladateconfig(config.beammap.sweep)
-    _consoladateconfig(config.templar)
-    _consoladateconfig(config.initgui)
-    _consoladateconfig(config.dashboard)
+    _consolidateconfig(config.beammap.sweep)
+    _consolidateconfig(config.templar)
+    _consolidateconfig(config.initgui)
+    _consolidateconfig(config.dashboard)
 
     return config
 
