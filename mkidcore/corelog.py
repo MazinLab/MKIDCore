@@ -42,7 +42,7 @@ def setup_logging(configfile='', env_key='MKID_LOG_CONFIG', logfile=None):
     global _setup
     if _setup:
         return
-    _setup=True
+    _setup = True
     value = os.getenv(env_key, '')
     path = configfile if os.path.exists(configfile) else value
     if not os.path.exists(path):
@@ -62,6 +62,8 @@ def setup_logging(configfile='', env_key='MKID_LOG_CONFIG', logfile=None):
                      exc_info=True)
 
     install_mp_handler()
+
+    logging.getLogger('matplotlib').setLevel(logging.INFO)
 
 
 def createFileLog(name, logfile, mpsafe=True, propagate=False,
