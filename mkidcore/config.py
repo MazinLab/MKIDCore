@@ -17,8 +17,6 @@ yaml = ruamel.yaml.YAML()
 
 yaml_object = ruamel.yaml.yaml_object
 
-setup_logging()
-
 
 def defaultconfigfile():
     return resource_filename(Requirement.parse("mkidcore"), "default.yml")
