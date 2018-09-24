@@ -2,6 +2,7 @@ import errno
 import logging
 import logging.config
 import os
+import sys
 
 import ruamel.yaml as yaml
 from multiprocessing_logging import install_mp_handler
@@ -9,9 +10,14 @@ from multiprocessing_logging import install_mp_handler
 # import progressbar
 # progressbar.streams.wrap_stderr()
 
-def getLogger(*args,**kwargs):
-    setup_logging()
-    return logging.getLogger(*args, **kwargs)
+
+def getLogger(*args, setup=True, **kwargs):
+    if setup:
+        setup_logging()
+    log = logging.getLogger(*args, **kwargs)
+    if not setup:
+        log.addHandler(logging.NullHandler())
+    return log
 
 _setup = False
 
@@ -66,19 +72,20 @@ def setup_logging(configfile='', env_key='MKID_LOG_CONFIG', logfile=None):
     logging.getLogger('matplotlib').setLevel(logging.INFO)
 
 
-def createFileLog(name, logfile, mpsafe=True, propagate=False,
-                  fmt='%(asctime)s %(levelname)s %(message)s %(process)d',
-                  level=logging.DEBUG):
-
-    if name in logging.Logger.manager.loggerDict:
-        logging.getLogger().warning("Log {} already exists,"
-                                    " returning existing log".format(name))
-        return logging.getLogger(name)
+def create_log(name, logfile='', console=True, mpsafe=True, propagate=False,
+               fmt='%(asctime)s %(levelname)s %(message)s %(process)d',
+               level=logging.DEBUG):
 
     log = logging.getLogger(name)
-    hdlr = MakeFileHandler(logfile)
-    hdlr.setFormatter(logging.Formatter(fmt))
-    log.addHandler(hdlr)
+    if logfile:
+        handler = MakeFileHandler(logfile)
+        handler.setFormatter(logging.Formatter(fmt))
+        log.addHandler(handler)
+    if console:
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(logging.Formatter(fmt))
+        log.addHandler(handler)
+
     log.setLevel(level)
     log.propagate = propagate
 
