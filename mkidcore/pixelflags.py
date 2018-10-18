@@ -32,16 +32,18 @@ fluxCal = {
 
 # Wavelength calibration flags
 waveCal = {0: "histogram fit - converged and validated",
-           1: "histogram not fit - did not converge",
-           2: "histogram not fit - converged but failed validation",
-           3: "histogram not fit - not enough data",
-           4: "energy fit - quadratic function",
-           5: "energy fit - linear function",
-           6: "energy not fit - not enough data points",
-           7: "energy not fit - data not monotonic enough",
-           8: "energy not fit - linear and quadratic fits failed",
-           9: "energy fit - linear function through zero",
-           10: "histogram not fit - too much data (hot pixel)"}
+           1: "histogram not fit - not enough data points",
+           2: "histogram not fit - too much data (hot pixel)",
+           3: "histogram not fit - not enough data left after arrival time cut",
+           4: "histogram not fit - not enough data left after negative phase only cut",
+           5: "histogram not fit - not enough histogram bins to fit the model",
+           6: "histogram not fit - best fit did not converge",
+           7: "histogram not fit - best fit converged but failed validation",
+           10: "energy fit - converged and validated",
+           11: "energy not fit - not enough data points",
+           12: "energy not fit - data not monotonic enough",
+           13: "energy not fit - best fit did not converge",
+           14: "energy not fit - best fit converged but failed validation"}
 
 #Bad pixel calibration flags (including hot pixels, cold pixels, etc.)
 badPixCal = {
