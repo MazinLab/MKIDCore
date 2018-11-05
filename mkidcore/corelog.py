@@ -10,8 +10,15 @@ from multiprocessing_logging import install_mp_handler
 # import progressbar
 # progressbar.streams.wrap_stderr()
 
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+WARNING = logging.WARNING
+ERROR = logging.ERROR
+CRITICAL = logging.CRITICAL
 
-def getLogger(*args, setup=True, **kwargs):
+
+def getLogger(*args, **kwargs):
+    setup = kwargs.pop('setup', True)
     if setup:
         setup_logging()
     log = logging.getLogger(*args, **kwargs)
@@ -19,7 +26,9 @@ def getLogger(*args, setup=True, **kwargs):
         log.addHandler(logging.NullHandler())
     return log
 
+
 _setup = False
+
 
 def mkdir_p(path):
     """http://stackoverflow.com/a/600612/190597 (tzot)"""
