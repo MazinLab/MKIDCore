@@ -83,7 +83,7 @@ def setup_logging(configfile='', env_key='MKID_LOG_CONFIG', logfile=None):
 
 def create_log(name, logfile='', console=True, mpsafe=True, propagate=False,
                fmt='%(asctime)s %(levelname)s %(message)s %(process)d',
-               level=logging.DEBUG):
+               level=logging.DEBUG, stdout=True):
 
     log = logging.getLogger(name)
     if logfile:
@@ -91,8 +91,8 @@ def create_log(name, logfile='', console=True, mpsafe=True, propagate=False,
         handler.setFormatter(logging.Formatter(fmt))
         handler.setLevel(level)
         log.addHandler(handler)
-    if console:
-        handler = logging.StreamHandler(sys.stderr)
+    if console and not len(filter(lambda h: isinstance(h, logging.StreamHandler), log.handlers)):
+        handler = logging.StreamHandler(sys.stdout if stdout else sys.stderr)
         handler.setFormatter(logging.Formatter(fmt))
         handler.setLevel(level)
         log.addHandler(handler)
