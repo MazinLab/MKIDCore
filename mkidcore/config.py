@@ -14,7 +14,6 @@ except ImportError:
 RESERVED = ('._c', '._a')
 
 yaml = ruamel.yaml.YAML()
-
 yaml_object = ruamel.yaml.yaml_object
 
 
@@ -22,8 +21,7 @@ def defaultconfigfile():
     return resource_filename(Requirement.parse("mkidcore"), "default.yml")
 
 
-
-@yaml_object(yaml)
+#@yaml_object(yaml)
 class ConfigThing(dict):
     """
     This Class implements a YAML-backed, nestable configuration object. The general idea is that
@@ -88,7 +86,7 @@ class ConfigThing(dict):
         In a.b.c Python resolves a.b by calling this function then calls .c on the return of a.b,
         so it is nontrivial for the a.b code to trap any KeyError that would be raised in looking for .c
         and thus silently returning a.c. This is probably for the best as it makes the intent more
-        explicit. Regardless no config inheritence when accesing with dot notation
+        explicit. Regardless no config inheritance when accessing with dot notation
         """
         k1, _, krest = key.partition('.')
         return self[k1][krest] if krest else self[k1]
@@ -102,9 +100,11 @@ class ConfigThing(dict):
     # def __str__(self):
     #     #TODO implement
 
-    def get(self, name, default=None, inherit=True):
+    def get(self, name, default=None, inherit=True, all=False):
         """This implements do notation of the config tree with optional inheritance and optional
         default value. Default values other han None take precedence over inheritance.
+
+        all will return a tuple (value, comment, allowed
 
         The empty string is a convenience for returning self
 
@@ -115,7 +115,6 @@ class ConfigThing(dict):
 
         # if not k1:
         #     return self
-
         try:
             next = self[k1]
         except KeyError as e:
@@ -125,15 +124,43 @@ class ConfigThing(dict):
                 next = default
 
         if not krest:
-            return next
+            if all:
+                print(all)
+                comment = None
+                allowed = None
+                try:
+                    comment = self[k1 + '._c']
+                except:
+                    pass
+                try:
+                    allowed = self[k1 + '._a']
+                except:
+                    pass
+                return next, comment, allowed
+            else:
+                return next
 
         try:
-            return next.get(krest, default, inherit)
+            return next.get(krest, default, inherit, all)
         except KeyError as e:
             if default is not None:
                 return default
             if inherit:
-                return self[krest.rpartition('.')[2]]
+                key=krest.rpartition('.')[2]
+                if all:
+                    comment = None
+                    allowed = None
+                    try:
+                        comment = self[key + '._c']
+                    except:
+                        pass
+                    try:
+                        allowed = self[k1 + '._a']
+                    except:
+                        pass
+                    return self[key], comment, allowed
+                else:
+                    return self[key]
             raise e
 
     def __contains__(self, k):
@@ -172,8 +199,19 @@ class ConfigThing(dict):
                       super(ConfigThing, self).items())
 
     def update(self, key, value, comment=None):
-        self.registered(key, error=True)
-        self._update(key, value, comment=comment)
+        """ update will register iff the update would override an inherited value  e.g. if roaches.ip is set but
+        roaches.r114.ip is not  roaches.r114.ip would yield roaches.ip but updateing roaches.r114.ip would create a
+        new setting unique to roaches.r114
+
+        """
+        if self.registered(key):
+            self._update(key, value, comment=comment)
+        else:
+            try:
+                _, c, a = self.get(key, inherit=True, all=True)
+                self._register(key, value, allowed=a, comment=c)
+            except KeyError:
+                raise KeyError("Setting '{}' is not registered or inherited".format(key))
 
     def _update(self, key, value, comment=None, ):
         k1, _, krest = key.partition('.')
@@ -270,7 +308,6 @@ class ConfigThing(dict):
             self.register(cannonizekey(namespace + k), cannonizevalue(v), update=True)
         return self
 
-yaml.register_class(ConfigThing)
 
 def cannonizekey(k):
     """Enforce cannonicity of config keys lowercase, no spaces (replace with underscore)"""
@@ -354,14 +391,78 @@ def _consolidateconfig(cd):
         cd.register('sweeps', sweeps)
 
 
+# def _include_constructor(self, node):
+#     print(node)
+#     if isinstance(node, ruamel.yaml.ScalarNode):
+#         with open(self.construct_scalar(node), 'r') as f:
+#             return self.construct_document(f)
+#     elif isinstance(node, ruamel.yaml.SequenceNode):
+#         result = []
+#         for filename in self.construct_sequence(node):
+#             with open(filename, 'r') as f:
+#                 result += self.construct_document(f)
+#         return result
+#     elif isinstance(node, ruamel.ruamel.MappingNode):
+#         result = {}
+#         for k, v in self.construct_mapping(node).iteritems():
+#             with open(v, 'r') as f:
+#                 result[k] = self.construct_document(f)
+#         return result
+#     else:
+#         print("Error:: unrecognised node type in !include statement")
+#         raise ruamel.yaml.constructor.ConstructorError
+# ruamel.yaml.add_constructor(u'!include', _include_constructor)
+
+
+yaml.register_class(ConfigThing)
+
+# @yaml_object(yaml)
+# class IncludeObject(object):
+#     yaml_tag = u'!include'
+#
+#     def __init__(self, foo):
+#         print(foo)
+#         # self._root = os.path.split(stream.name)[0]
+#
+#     @classmethod
+#     def from_yaml(cls, loader, node):
+#         if isinstance(node, ruamel.yaml.ScalarNode):
+#             import ipdb;ipdb.set_trace()
+#             with open(loader.construct_scalar(node), 'r') as f:
+#                 foo=loader.get_single_data(f)
+#                 foo = yaml.load(f)
+#         elif isinstance(node, ruamel.yaml.SequenceNode):
+#             result = []
+#             for filename in loader.construct_sequence(node):
+#                 with open(filename, 'r') as f:
+#                     result += yaml.load(f)
+#             return result
+#         elif isinstance(node, ruamel.yaml.MappingNode):
+#             result = {}
+#             for k, v in loader.construct_mapping(node).iteritems():
+#                 with open(v, 'r') as f:
+#                     result[k] = yaml.load(f)
+#             return result
+#         else:
+#             raise ruamel.yaml.YAMLError("Unrecognised node type in !include")
+#
+#
+# yaml.register_class(IncludeObject)
+
+
 def load(file, namespace=None):
-    if file.lower().endswith(('yaml','yml')):
-        with open(file,'r') as f:
-            return yaml.load(f)
+    if file.lower().endswith(('yaml', 'yml')):
+        with open(file, 'r') as f:
+            ret=yaml.load(f)
+        if 'roaches' in ret: #This is a horribly, dastardly dirty hack
+            with open(ret.roaches.value, 'r') as f:
+                ret.update('roaches', yaml.load(f))
+        return ret
     elif namespace is None:
         raise ValueError('Namespace required when loading an old config')
     else:
         return ConfigThing().registerfromconfigparser(loadoldconfig(file), namespace)
+
 
 def ingestoldconfigs(cfiles=('beammap.align.cfg', 'beammap.clean.cfg', 'beammap.sweep.cfg', 'dashboard.cfg',
                              'initgui.cfg', 'powersweep.ml.cfg',  'templar.cfg')):
