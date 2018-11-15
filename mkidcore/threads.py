@@ -60,7 +60,7 @@ class Thread(object):
         self._thread = None
 
     @property
-    def _is_running(self):
+    def is_running(self):
         """
         Is the thread running?
         """
@@ -70,7 +70,7 @@ class Thread(object):
         """
         Starting the thread
         """
-        if not self._is_running:
+        if not self.is_running:
             self._log.info('Starting thread: ' + self._name)
             self._stop_event.clear()
             kwargs['stop_event'] = self._stop_event
@@ -81,13 +81,13 @@ class Thread(object):
                                                 log=self._log, name=self._name,
                                                 daemon=self._daemon)
         else:
-            self._log.info('Thread arleady running: ' + self._name)
+            self._log.info('Thread already running: ' + self._name)
 
     def stop(self):
         """
         Starting the thread
         """
-        if self._is_running:
+        if self.is_running:
             self._log.info('Ending thread: ' + self._name)
             self._stop_event.set()
         else:
