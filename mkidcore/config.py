@@ -4,6 +4,7 @@ import ruamel.yaml
 from pkg_resources import Requirement, resource_filename
 from mkidcore.utils import caller_name
 from mkidcore.corelog import getLogger, setup_logging
+from multiprocessing import RLock
 try:
     from StringIO import StringIO
     import ConfigParser as configparser
@@ -21,7 +22,6 @@ def defaultconfigfile():
     return resource_filename(Requirement.parse("mkidcore"), "default.yml")
 
 
-#@yaml_object(yaml)
 class ConfigThing(dict):
     """
     This Class implements a YAML-backed, nestable configuration object. The general idea is that
@@ -48,6 +48,7 @@ class ConfigThing(dict):
     want it yet:
      -1 Updating a default load of settings with a subset from a user's file.
      -2 Controlling the breakup of the settings into multiple files.
+     implement __str__
 
     """
     yaml_tag = u'!configdict'
@@ -60,6 +61,7 @@ class ConfigThing(dict):
         """
         if args:
             super(ConfigThing, self).update([(cannonizekey(k), v) for k, v in args[0]])
+        self._lock = RLock()
         self.__frozen = True
 
     @classmethod
@@ -68,17 +70,19 @@ class ConfigThing(dict):
 
     @classmethod
     def from_yaml(cls, loader, node):
-        # loader = ruamel.yaml.constructor.RoundTripConstructor
-        # node = MappingNode(tag=u'!MyDict', value=[(ScalarNode(tag=u'tag:yaml.org,2002:str', value=u'initgui'),....
-        # cls = <class '__main__.MyDict'>
+        # NB:
+        # loader is ruamel.yaml.constructor.RoundTripConstructor
+        # node is MappingNode(tag=u'!configdict', value=[(ScalarNode(tag=u'tag:yaml.org,2002:str', value=u'initgui'),
+        # cls is ConfigThing
         d = loader.construct_pairs(node)  #WTH this one line took half a day to get right
         return cls(d)
 
     def dump(self):
         """Dump the config to a YAML string"""
-        out = StringIO()
-        yaml.dump(self, out)
-        return out.getvalue()
+        with self._lock:
+            out = StringIO()
+            yaml.dump(self, out)
+            return out.getvalue()
 
     def __getattr__(self, key):
         """This implements dot notation of the config tree without default inheritance
@@ -88,17 +92,15 @@ class ConfigThing(dict):
         and thus silently returning a.c. This is probably for the best as it makes the intent more
         explicit. Regardless no config inheritance when accessing with dot notation
         """
-        k1, _, krest = key.partition('.')
-        return self[k1][krest] if krest else self[k1]
+        with self._lock:
+            k1, _, krest = key.partition('.')
+            return self[k1][krest] if krest else self[k1]
 
     def __setattr__(self, key, value):
         if self.__frozen and not key.startswith('_'):
             raise AttributeError('Use register to add config attributes')
         else:
             object.__setattr__(self, key, value)
-
-    # def __str__(self):
-    #     #TODO implement
 
     def get(self, name, default=None, inherit=True, all=False):
         """This implements do notation of the config tree with optional inheritance and optional
@@ -111,67 +113,68 @@ class ConfigThing(dict):
         Inheritance means that if cfg.beam.sweep.imgdir doesn't exist but
         cfg.beam.imgdir (or then cfg.imgdir) would be returned provided they are leafs
         """
-        k1, _, krest = name.partition('.')
+        with self._lock:
+            k1, _, krest = name.partition('.')
 
-        # if not k1:
-        #     return self
-        try:
-            next = self[k1]
-        except KeyError as e:
-            if default is None:
-                raise e
-            else:
-                next = default
+            try:
+                next = self[k1]
+            except KeyError as e:
+                if default is None:
+                    raise e
+                else:
+                    next = default
 
-        if not krest:
-            if all:
-                print(all)
-                comment = None
-                allowed = None
-                try:
-                    comment = self[k1 + '._c']
-                except:
-                    pass
-                try:
-                    allowed = self[k1 + '._a']
-                except:
-                    pass
-                return next, comment, allowed
-            else:
-                return next
-
-        try:
-            return next.get(krest, default, inherit, all)
-        except KeyError as e:
-            if default is not None:
-                return default
-            if inherit:
-                key=krest.rpartition('.')[2]
+            if not krest:
                 if all:
-                    comment = None
-                    allowed = None
+                    comment, allowed = None, None
                     try:
-                        comment = self[key + '._c']
+                        comment = self[k1 + '._c']
                     except:
                         pass
                     try:
                         allowed = self[k1 + '._a']
                     except:
                         pass
-                    return self[key], comment, allowed
+                    return next, comment, allowed
                 else:
-                    return self[key]
-            raise e
+                    return next
+            else:  # fetch from child
+                try:
+                    return next.get(krest, default, inherit, all)
+                except KeyError as e:
+                    if default is not None:
+                        return default
+                    if not inherit:
+                        raise e
+
+            # inherit from self
+            key = krest.rpartition('.')[2]
+            if all:
+                comment = None
+                allowed = None
+                try:
+                    comment = self[key + '._c']
+                except:
+                    pass
+                try:
+                    allowed = self[k1 + '._a']
+                except:
+                    pass
+                return self[key], comment, allowed
+            else:
+                return self[key]
+
 
     def __contains__(self, k):
         """Contains only implements explicit keys, inheritance is not checked."""
-        k1, _, krest = k.partition('.')
-        if super(ConfigThing, self).__contains__(k1):
-            if krest:
-                return krest in self[k1]
-            return True
-        else:
-            return False
+        with self._lock:
+            k1, _, krest = k.partition('.')
+            if super(ConfigThing, self).__contains__(k1):
+                if krest:
+                    return krest in self[k1]
+                return True
+            else:
+                return False
 
     def registered(self, key, error=False):
         if key not in self:
@@ -204,14 +207,15 @@ class ConfigThing(dict):
         new setting unique to roaches.r114
 
         """
-        if self.registered(key):
-            self._update(key, value, comment=comment)
-        else:
-            try:
-                _, c, a = self.get(key, inherit=True, all=True)
-                self._register(key, value, allowed=a, comment=c)
-            except KeyError:
-                raise KeyError("Setting '{}' is not registered or inherited".format(key))
+        with self._lock:
+            if self.registered(key):
+                self._update(key, value, comment=comment)
+            else:
+                try:
+                    _, c, a = self.get(key, inherit=True, all=True)
+                    self._register(key, value, allowed=a, comment=c)
+                except KeyError:
+                    raise KeyError("Setting '{}' is not registered or inherited".format(key))
 
     def _update(self, key, value, comment=None, ):
         k1, _, krest = key.partition('.')
@@ -252,61 +256,74 @@ class ConfigThing(dict):
     def register(self, key, initialvalue, allowed=None, comment=None, update=False):
         """Registers a key, true iff the key was registered. Does not update an existing key unless
         update is True."""
-        self.keyisvalid(key, error=True)
-        ret = not self.registered(key)
-        if not ret and not update:
+        with self._lock:
+            self.keyisvalid(key, error=True)
+            ret = not self.registered(key)
+            if not ret and not update:
+                return ret
+            self._register(key, initialvalue, allowed=allowed, comment=comment)
             return ret
-        self._register(key, initialvalue, allowed=allowed, comment=comment)
-        return ret
 
     def registersubdict(self, key, configdict):
-        self[key] = configdict
+        with self._lock:
+            self[key] = configdict
 
     def unregister(self, key):
-        self.keyisvalid(key, error=True)
-        if '.' in key:
-            root,_,end = key.rpartition('.')
-            d = self.get(root, {})
-            for k in [end]+[end+r for r in RESERVED]:
-                d.pop(k, None)
-        else:
-            for k in [key]+[key+r for r in RESERVED]:
-                self.pop(k, None)
+        with self._lock:
+            self.keyisvalid(key, error=True)
+            if '.' in key:
+                root,_,end = key.rpartition('.')
+                d = self.get(root, {})
+                for k in [end]+[end+r for r in RESERVED]:
+                    d.pop(k, None)
+            else:
+                for k in [key]+[key+r for r in RESERVED]:
+                    self.pop(k, None)
 
     def todict(self):
-        ret = dict(self)
-        for k,v in ret.items():
-            if isinstance(v, ConfigThing):
-                ret[k] = v.todict()
-        return ret
+        with self._lock:
+            ret = dict(self)
+            for k,v in ret.items():
+                if isinstance(v, ConfigThing):
+                    ret[k] = v.todict()
+            return ret
 
     def save(self, file):
-        with open(file,'w') as f:
-            yaml.dump(self, f)
+        with self._lock:
+            with open(file,'w') as f:
+                yaml.dump(self, f)
 
     def registerfromconfigparser(self, cp, namespace=None):
         """loads all data in the config parser object, overwriting any that already exist"""
-        if namespace is None:
-            namespace = caller_name().lower()
-            getLogger('MKIDConfig').debug('Assuming namespace "{}"'.format(namespace))
-        namespace = namespace if namespace.endswith('.') else (namespace + '.' if namespace else '')
-        for k, v in cp.items('DEFAULT'):
-            self.register(cannonizekey(namespace+k), cannonizevalue(v), update=True)
-        for s in cp.sections():
-            ns = namespace + s + '.'
-            for k, v in cp.items(s):
-                self.register(cannonizekey(ns + k), cannonizevalue(v), update=True)
-        return self
+        with self._lock:
+            if namespace is None:
+                namespace = caller_name().lower()
+                getLogger('MKIDConfig').debug('Assuming namespace "{}"'.format(namespace))
+            namespace = namespace if namespace.endswith('.') else (namespace + '.' if namespace else '')
+            for k, v in cp.items('DEFAULT'):
+                self.register(cannonizekey(namespace+k), cannonizevalue(v), update=True)
+            for s in cp.sections():
+                ns = namespace + s + '.'
+                for k, v in cp.items(s):
+                    self.register(cannonizekey(ns + k), cannonizevalue(v), update=True)
+            return self
 
     def registerfromkvlist(self, kv, namespace=None):
         """loads all data in the keyvalue iterable, overwriting any that already exist"""
-        if namespace is None:
-            namespace = caller_name().lower()
-            getLogger('MKIDConfig').debug('Assuming namespace "{}"'.format(namespace))
-        namespace = namespace if namespace.endswith('.') else (namespace + '.' if namespace else '')
-        for k, v in kv:
-            self.register(cannonizekey(namespace + k), cannonizevalue(v), update=True)
-        return self
+        with self._lock:
+            if namespace is None:
+                namespace = caller_name().lower()
+                getLogger('MKIDConfig').debug('Assuming namespace "{}"'.format(namespace))
+            namespace = namespace if namespace.endswith('.') else (namespace + '.' if namespace else '')
+            for k, v in kv:
+                self.register(cannonizekey(namespace + k), cannonizevalue(v), update=True)
+            return self
+
+    def _setlock(self, lock=None):
+        self._lock = lock if lock is not None else RLock()
+        for k,v in self.items():
+            if isinstance(v, ConfigThing):
+                v._setlock(lock=self._lock)
 
 
 def cannonizekey(k):
@@ -391,6 +408,10 @@ def _consolidateconfig(cd):
         cd.register('sweeps', sweeps)
 
 
+yaml.register_class(ConfigThing)
+
+
+
 # def _include_constructor(self, node):
 #     print(node)
 #     if isinstance(node, ruamel.yaml.ScalarNode):
@@ -413,8 +434,6 @@ def _consolidateconfig(cd):
 #         raise ruamel.yaml.constructor.ConstructorError
 # ruamel.yaml.add_constructor(u'!include', _include_constructor)
 
-
-yaml.register_class(ConfigThing)
 
 # @yaml_object(yaml)
 # class IncludeObject(object):
@@ -451,12 +470,16 @@ yaml.register_class(ConfigThing)
 
 
 def load(file, namespace=None):
+    if not isinstance(file, str):
+        return file
+
     if file.lower().endswith(('yaml', 'yml')):
         with open(file, 'r') as f:
             ret=yaml.load(f)
         if 'roaches' in ret: #This is a horribly, dastardly dirty hack
             with open(ret.roaches.value, 'r') as f:
                 ret.update('roaches', yaml.load(f))
+        ret._setlock()
         return ret
     elif namespace is None:
         raise ValueError('Namespace required when loading an old config')
@@ -477,11 +500,6 @@ def ingestoldconfigs(cfiles=('beammap.align.cfg', 'beammap.clean.cfg', 'beammap.
     _consolidateconfig(config.dashboard)
 
     return config
-
-
-config = ConfigThing()
-
-# c = config = ingestoldconfigs()
 
 
 

@@ -18,7 +18,7 @@ CRITICAL = logging.CRITICAL
 
 
 def getLogger(*args, **kwargs):
-    setup = kwargs.pop('setup', True)
+    setup = kwargs.pop('setup', False)
     if setup:
         setup_logging()
     log = logging.getLogger(*args, **kwargs)
