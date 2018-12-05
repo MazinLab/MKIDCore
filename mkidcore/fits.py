@@ -1,7 +1,7 @@
 from astropy.io import fits
 import numpy as np
 import os
-import datetime
+from datetime import datetime
 from multiprocessing.pool import ThreadPool
 
 from collections import namedtuple
@@ -43,7 +43,7 @@ def loadimg(file, ncol, nrow, **kwargs):
         ret.header['utc'] = datetime.utcfromtimestamp(tstamp).strftime('%Y-%m-%d %H:%M:%S')
         ret.header['exptime'] = np.nan
         for k, v in kwargs.items():
-            ret.header[k]=v
+            ret.header[k] = v
         return fits.HDUList([fits.PrimaryHDU(), ret]) if rettype == 'hdul' else ret
     else:
         return ImgTuple(image, file, tstamp)
