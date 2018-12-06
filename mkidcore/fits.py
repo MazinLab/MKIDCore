@@ -3,6 +3,7 @@ import numpy as np
 import os
 from datetime import datetime
 from multiprocessing.pool import ThreadPool
+from mkidcore.corelog import getLogger
 
 from collections import namedtuple
 ImgTuple = namedtuple('img', ['data', 'file', 'time'])
@@ -41,7 +42,7 @@ def loadimg(file, ncol, nrow, **kwargs):
         ret = fits.ImageHDU(data=image)
         ret.header['imgname'] = os.path.basename(file)
         ret.header['utc'] = datetime.utcfromtimestamp(tstamp).strftime('%Y-%m-%d %H:%M:%S')
-        ret.header['exptime'] = np.nan
+        ret.header['exptime'] = 'NaN'
         for k, v in kwargs.items():
             ret.header[k] = v
         return fits.HDUList([fits.PrimaryHDU(), ret]) if rettype == 'hdul' else ret
@@ -54,7 +55,7 @@ def summarize(hdu):
     #TODO flesh out stub
     return ("Total Counts: {:.0f}\n"
             "Exp. Time: {:.0f}\n"
-            "Shape: {}x{}").format(hdu.data.sum(), hdu.header.exptime, hdu.data.shape[0], hdu.data.shape[1])
+            "Shape: {}x{}").format(hdu.data.sum(), hdu.heade['exptime'], hdu.data.shape[0], hdu.data.shape[1])
 
 
 def makedark(images, et, badmask=None):
@@ -110,21 +111,23 @@ class CalFactory(object):
             setattr(self, k, v)
 
     def add_image(self, image):
+        getLogger(__name__).debug('Adding image to {} calfactory'.format(self.kind))
         self.images.append(image)
 
     def generate(self, fname='calib.fits', name='calimage', badmask=None, dtype=float, bias=0, header={},
                  threaded=False, save=False):
 
+        getLogger(__name__).info('Generating using method {}. N images: {}'.format(self.kind, len(self.images)))
         if not self.images:
             return None
 
         if threaded:
             pool = ThreadPool(processes=1)
-            async_result = pool.apply_async(self.generate, tuple(), dict(fname=fname,name=name, badmask=badmask,
+            async_result = pool.apply_async(self.generate, tuple(), dict(fname=fname, name=name, badmask=badmask,
                                                                          dtype=dtype, threaded=False, save=save))
             return async_result
 
-        et = sum([i.header.exptime for i in self.images])
+        et = sum([i.header['exptime'] for i in self.images])
         idata = [i.data for i in self.images]
 
         ret = fits.PrimaryHDU(data=self.images[0].data.astype(dtype), header=self.images[0].header)
@@ -163,7 +166,9 @@ class CalFactory(object):
         ret.header['name'] = name
         for k, v in header.items():
             ret.header[k] = v
+
         if save:
+            getLogger(__name__).debug('Saving fits to {}'.format(fname))
             ret.writeto(fname)
 
         return ret

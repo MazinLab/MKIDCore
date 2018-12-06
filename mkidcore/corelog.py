@@ -97,6 +97,8 @@ def create_log(name, logfile='', console=True, mpsafe=True, propagate=False,
         handler.setFormatter(logging.Formatter(fmt))
         handler.setLevel(level)
         log.addHandler(handler)
+    else:
+        print('not adding console handler to {}'.format(name))
 
     log.setLevel(level)
     log.propagate = propagate
