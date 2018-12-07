@@ -3,6 +3,9 @@ import numpy as np
 import os
 from datetime import datetime
 from multiprocessing.pool import ThreadPool
+from threading import Thread
+from Queue import Queue
+import time
 from mkidcore.corelog import getLogger
 
 from collections import namedtuple
@@ -55,7 +58,7 @@ def summarize(hdu):
     #TODO flesh out stub
     return ("Total Counts: {:.0f}\n"
             "Exp. Time: {:.0f}\n"
-            "Shape: {}x{}").format(hdu.data.sum(), hdu.heade['exptime'], hdu.data.shape[0], hdu.data.shape[1])
+            "Shape: {}x{}").format(hdu.data.sum(), hdu.header['exptime'], hdu.data.shape[0], hdu.data.shape[1])
 
 
 def makedark(images, et, badmask=None):
@@ -69,7 +72,7 @@ def makeflat(images, dark, et, min=1, max=np.inf, medlim=100, colslice=None, bad
     data = np.sum([i - dark for i in images], axis=0, dtype=float)
     data /= et
     data.clip(min, max, out=data)
-    data[~data.nonzero()] = 1
+    data[data==0] = 1
     medDat = data.copy()
 
     bmask = badmask if badmask is not None else np.zeros_like(images[0], dtype=bool)
@@ -117,15 +120,22 @@ class CalFactory(object):
     def generate(self, fname='calib.fits', name='calimage', badmask=None, dtype=float, bias=0, header={},
                  threaded=False, save=False):
 
-        getLogger(__name__).info('Generating using method {}. N images: {}'.format(self.kind, len(self.images)))
+        tic = time.time()
+        spawn = isinstance(threaded, bool) and threaded
+
+        sv = ' Will save to {}'.format(fname) if save else ''
+        getLogger(__name__).info(('Generating "{}" from {} images '
+                                 'using method {} in {} thread.'+sv).format(name, len(self.images), self.kind,
+                                                                            ('a new' if spawn else 'this')))
         if not self.images:
             return None
 
-        if threaded:
-            pool = ThreadPool(processes=1)
-            async_result = pool.apply_async(self.generate, tuple(), dict(fname=fname, name=name, badmask=badmask,
-                                                                         dtype=dtype, threaded=False, save=save))
-            return async_result
+        if spawn:
+            q = Queue()
+            t = Thread(target=self.generate, args=tuple(), kwargs=dict(fname=fname, name=name, badmask=badmask,
+                                                                     dtype=dtype, threaded=q, save=save))
+            t.start()
+            return q
 
         et = sum([i.header['exptime'] for i in self.images])
         idata = [i.data for i in self.images]
@@ -171,4 +181,9 @@ class CalFactory(object):
             getLogger(__name__).debug('Saving fits to {}'.format(fname))
             ret.writeto(fname)
 
-        return ret
+        getLogger(__name__).debug('Generation took {:.1f} ms'.format((time.time()-tic)*1000))
+
+        if isinstance(threaded, Queue):
+            threaded.put(ret)
+        else:
+            return ret
