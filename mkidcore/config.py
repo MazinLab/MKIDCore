@@ -22,6 +22,22 @@ def defaultconfigfile():
     return resource_filename(Requirement.parse("mkidcore"), "default.yml")
 
 
+def extract_from_node(keys, node):
+    """attempt extraction of keys from a ruamel.yaml mapping node and return as a dict"""
+    d = {}
+    try:
+        listkeys = iter(keys)
+    except TypeError:
+        listkeys = [keys]
+
+    for k in listkeys:
+        try:
+            d[k] = [x[1].value for x in node.value if x[0].value == k][0]
+        except IndexError:
+            pass
+    return d
+
+
 class ConfigThing(dict):
     """
     This Class implements a YAML-backed, nestable configuration object. The general idea is that
