@@ -72,3 +72,18 @@ h5FileFlags = {
                'waveCalFailed':0b00000100,      #No wavecal solution
                'flatCalFailed':0b00001000       #No flatcal solution
                }
+
+HOTPIXEL = badPixCal['hot']
+DEADPIXEL = badPixCal['dead']
+
+
+def valid(flag, error=False):
+    """Test flag (or array of flags) for validity"""
+    #TODO implement
+
+    valid = True
+    invalidflag = 0
+    if error and not valid:
+        raise ValueError('{} is not a valid flag.'.format(invalidflag))
+
+    return valid
