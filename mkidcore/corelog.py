@@ -92,7 +92,7 @@ def create_log(name, logfile='', console=True, mpsafe=True, propagate=False,
         handler.setLevel(level)
         log.addHandler(handler)
     if console:
-        handler = logging.StreamHandler(sys.stderr)
+        handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(logging.Formatter(fmt))
         handler.setLevel(level)
         log.addHandler(handler)
