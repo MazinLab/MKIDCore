@@ -8,7 +8,7 @@ May update to use pytables Enums at some point down the road....
 """
 
 #Flat cal. flags:
-flatCal = {
+flatcal = {
            'good':0,                #No flagging.
            'infWeight':1,           #Spurious infinite weight was calculated - weight set to 1.0
            'zeroWeight':2,          #Spurious zero weight was calculated - weight set to 1.0
@@ -18,8 +18,8 @@ flatCal = {
            'undetermined':99,       #Flag status is undetermined.
            }
 
-#Flux cal. flags
-fluxCal = {
+#Spectral cal. flags
+speccal = {
            'good':0,                #No flagging.
            'infWeight':1,           #Spurious infinite weight was calculated - weight set to 1.0
            'LEzeroWeight':2,        #Spurious less-than-or-equal-to-zero weight was calculated - weight set to 1.0
@@ -31,7 +31,7 @@ fluxCal = {
            }
 
 # Wavelength calibration flags
-waveCal = {0: "histogram fit - converged and validated",
+wavecal = {0: "histogram fit - converged and validated",
            1: "histogram not fit - not enough data points",
            2: "histogram not fit - too much data (hot pixel)",
            3: "histogram not fit - not enough data left after arrival time cut",
@@ -46,7 +46,7 @@ waveCal = {0: "histogram fit - converged and validated",
            14: "energy not fit - best fit converged but failed validation"}
 
 #Bad pixel calibration flags (including hot pixels, cold pixels, etc.)
-badPixCal = {
+badpixcal = {
              'good':0,              #No flagging.
              'hot':1,               #Hot pixel
              'cold':2,              #Cold pixel
@@ -72,3 +72,18 @@ h5FileFlags = {
                'waveCalFailed':0b00000100,      #No wavecal solution
                'flatCalFailed':0b00001000       #No flatcal solution
                }
+
+HOTPIXEL = badPixCal['hot']
+DEADPIXEL = badPixCal['dead']
+
+
+def valid(flag, error=False):
+    """Test flag (or array of flags) for validity"""
+    #TODO implement
+
+    valid = True
+    invalidflag = 0
+    if error and not valid:
+        raise ValueError('{} is not a valid flag.'.format(invalidflag))
+
+    return valid
