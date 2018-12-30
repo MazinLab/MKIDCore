@@ -73,8 +73,8 @@ h5FileFlags = {
                'flatCalFailed':0b00001000       #No flatcal solution
                }
 
-HOTPIXEL = badPixCal['hot']
-DEADPIXEL = badPixCal['dead']
+HOTPIXEL = badpixcal['hot']
+DEADPIXEL = badpixcal['dead']
 
 
 def valid(flag, error=False):
