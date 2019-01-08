@@ -2,6 +2,43 @@ from functools import wraps
 import inspect
 
 
+def query(question, yes_or_no=False, default="no"):
+    """
+    Ask a question via raw_input() and return their answer.
+    "question" is a string that is presented to the user.
+    "yes_or_no" specifies if it is a yes or no question
+    "default" is the presumed answer if the user just hits <Enter>.
+    It must be "yes" (the default), "no" or None (meaning an answer is required of
+    the user). Only used if yes_or_no=True.
+    The "answer" return value is the user input for a general question. For a yes or
+    no question it is True for "yes" and False for "no".
+    """
+    if yes_or_no:
+        valid = {"yes": True, "y": True, "ye": True, "no": False, "n": False}
+    if not yes_or_no:
+        prompt = ""
+        default = None
+    elif default is None:
+        prompt = " [y/n] "
+    elif default == "yes":
+        prompt = " [Y/n] "
+    elif default == "no":
+        prompt = " [y/N] "
+    else:
+        raise ValueError("invalid default answer: '%s'" % default)
+    while True:
+        print(question + prompt)
+        choice = input().lower()
+        if not yes_or_no:
+            return choice
+        elif default is not None and choice == '':
+            return valid[default]
+        elif choice in valid:
+            return valid[choice]
+        else:
+            print("Please respond with 'yes' or 'no' (or 'y' or 'n').")
+
+
 def freeze(cls, msg="Class {cls} is frozen. Cannot set {key} = {value}"):
     """Wrap and freeze a class so that a=A(); a.foo=4 fails if .foo isn't defined by the class """
     cls.__frozen = False
@@ -23,6 +60,7 @@ def freeze(cls, msg="Class {cls} is frozen. Cannot set {key} = {value}"):
     cls.__init__ = init_decorator(cls.__init__)
 
     return cls
+
 
 def caller_name(skip=2):
     """Get a name of a caller in the format module.class.method

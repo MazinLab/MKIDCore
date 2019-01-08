@@ -25,14 +25,11 @@ def defaultconfigfile():
 def extract_from_node(keys, node):
     """attempt extraction of keys from a ruamel.yaml mapping node and return as a dict"""
     d = {}
-    try:
-        listkeys = iter(keys)
-    except TypeError:
-        listkeys = [keys]
+    listkeys = [keys] if not isinstance(keys, (list, tuple)) else keys
 
     for k in listkeys:
         try:
-            d[k] = [x[1].value for x in node.value if x[0].value == k][0]
+            d[k] = [nv.value for nk, nv in node.value if nk.value == k][0]
         except IndexError:
             pass
     return d
@@ -91,7 +88,9 @@ class ConfigThing(dict):
         # node is MappingNode(tag=u'!configdict', value=[(ScalarNode(tag=u'tag:yaml.org,2002:str', value=u'initgui'),
         # cls is ConfigThing
         d = loader.construct_pairs(node)  #WTH this one line took half a day to get right
-        return cls(d)
+        d = cls(d)
+        d._setlock()
+        return d
 
     def dump(self):
         """Dump the config to a YAML string"""
@@ -491,11 +490,10 @@ def load(file, namespace=None):
 
     if file.lower().endswith(('yaml', 'yml')):
         with open(file, 'r') as f:
-            ret=yaml.load(f)
+            ret = yaml.load(f)
         if 'roaches' in ret: #This is a horribly, dastardly dirty hack
             with open(ret.roaches.value, 'r') as f:
                 ret.update('roaches', yaml.load(f))
-        ret._setlock()
         return ret
     elif namespace is None:
         raise ValueError('Namespace required when loading an old config')

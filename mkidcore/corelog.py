@@ -82,7 +82,7 @@ def setup_logging(configfile='', env_key='MKID_LOG_CONFIG', logfile=None):
 
 
 def create_log(name, logfile='', console=True, mpsafe=True, propagate=False,
-               fmt='%(asctime)s %(levelname)s %(message)s %(process)d',
+               fmt='%(asctime)s %(levelname)s %(message)s (pid=%(process)d)',
                level=logging.DEBUG, stdout=True):
 
     log = logging.getLogger(name)
