@@ -1,5 +1,15 @@
 from functools import wraps
 import inspect
+import multiprocessing as mp
+
+_manager = None
+
+
+def manager(*args, **kwargs):
+    global _manager
+    if _manager is None:
+        _manager = mp.Manager(*args, **kwargs)
+    return _manager
 
 
 def query(question, yes_or_no=False, default="no"):
