@@ -151,7 +151,7 @@ class CalFactory(object):
             ret.header['darkfile'] = None if self.dark is None else self.dark.header['filename']
         elif self.kind[:3] == 'avg':
             d = np.zeros_like(ret.data) if self.dark is None else self.dark.data
-            f = np.zeros_like(ret.data) if self.flat is None else self.flat.data
+            f = np.ones_like(ret.data) if self.flat is None else self.flat.data
             ret.data = (np.sum(idata, axis=0, dtype=float)/et - d)
             ret.data *= f
             # previously the flat was only applied at nonzero pixels
@@ -160,7 +160,7 @@ class CalFactory(object):
             ret.header['darkfile'] = None if self.dark is None else self.dark.header['filename']
         elif self.kind[:3] == 'sum':
             d = np.zeros_like(ret.data) if self.dark is None else self.dark.data
-            f = np.zeros_like(ret.data) if self.flat is None else self.flat.data
+            f = np.ones_like(ret.data) if self.flat is None else self.flat.data
             ret.data = np.sum(idata, axis=0, dtype=float) - d*len(idata)
             ret.data *= f
             # previously the flat was only applied at nonzero pixels
