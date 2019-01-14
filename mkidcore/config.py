@@ -305,7 +305,7 @@ class ConfigThing(dict):
 
     def save(self, file):
         with self._lock:
-            with open(file,'w') as f:
+            with open(file, 'w') as f:
                 yaml.dump(self, f)
 
     def registerfromconfigparser(self, cp, namespace=None):

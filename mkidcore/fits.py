@@ -58,7 +58,10 @@ def summarize(hdu):
     #TODO flesh out stub
     return ("Total Counts: {:.0f}\n"
             "Exp. Time: {:.0f}\n"
-            "Shape: {}x{}").format(hdu.data.sum(), hdu.header['exptime'], hdu.data.shape[0], hdu.data.shape[1])
+            "Shape: {}x{}").format(hdu.data.sum(),
+                                   hdu.header['exptime'],
+                                   hdu.data.shape[0],
+                                   hdu.data.shape[1])
 
 
 def makedark(images, et, badmask=None):
