@@ -5,6 +5,7 @@ from pkg_resources import Requirement, resource_filename
 from mkidcore.utils import caller_name
 from mkidcore.corelog import getLogger, setup_logging
 from multiprocessing import RLock
+import copy
 try:
     from StringIO import StringIO
     import ConfigParser as configparser
@@ -91,6 +92,36 @@ class ConfigThing(dict):
         d = cls(d)
         d._setlock()
         return d
+    #
+    # def __copy__(self):
+    #     ret = super(ConfigThing, self).__copy__()
+    #     ret._
+    #     return super(ConfigThing, self).__copy__()
+    #
+    # def __deepcopy__(self, memodict={}):
+    #     ret = super(ConfigThing, self).__deepcopy__()
+    #     copy.deepcopy(comp, memodict)
+    """
+    In order for a class to define its own copy implementation, it can define special methods __copy__() 
+    and __deepcopy__(). The former is called to implement the shallow copy operation; no additional arguments 
+    are passed. The latter is called to implement the deep copy operation; it is passed one argument, the memo 
+    dictionary. If the __deepcopy__() implementation needs to make a deep copy of a component, it should call 
+    the deepcopy() function with the component as first argument and the memo dictionary as second argument.
+    """
+
+    def copy(self):
+        c = copy.deepcopy(self)
+        c._setlock()
+        return c
+
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        d.pop('_lock')
+        return d
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self._setlock()
 
     def dump(self):
         """Dump the config to a YAML string"""
@@ -107,9 +138,15 @@ class ConfigThing(dict):
         and thus silently returning a.c. This is probably for the best as it makes the intent more
         explicit. Regardless no config inheritance when accessing with dot notation
         """
-        with self._lock:
-            k1, _, krest = key.partition('.')
-            return self[k1][krest] if krest else self[k1]
+        if key.startswith('__'):
+            try:
+                return self.__dict__[key]
+            except KeyError:
+                raise AttributeError(key)
+        else:
+            with self._lock:
+                k1, _, krest = key.partition('.')
+                return self[k1][krest] if krest else self[k1]
 
     def __setattr__(self, key, value):
         if self.__frozen and not key.startswith('_'):
