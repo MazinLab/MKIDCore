@@ -31,10 +31,14 @@ def loadimg(file, ncol, nrow, **kwargs):
     """
     rettype = kwargs.pop('returntype', 'hdu')
 
-    with open(file, mode='rb') as f:
-        image = np.fromfile(f, dtype=np.uint16)
-
-    image = np.transpose(np.reshape(image, (ncol, nrow)))
+    try:
+        with open(file, mode='rb') as f:
+            image = np.fromfile(f, dtype=np.uint16).reshape(ncol, nrow).T
+    except ValueError:
+        time.sleep(.05)
+        getLogger(__name__).debug('Retrying {}'.format(file))
+        with open(file, mode='rb') as f:
+            image = np.fromfile(f, dtype=np.uint16).reshape(ncol, nrow).T
 
     try:
         tstamp = int(os.path.basename(file).partition('.')[0])
