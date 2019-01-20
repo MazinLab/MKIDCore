@@ -13,7 +13,7 @@ def ask_for(key):
 
 
 class ReadDict(dict):
-    def __init__(self, ask=False, file=''):
+    def __init__(self, file='', ask=False):
         """
         @param ask if the dict doesn't have an entry for a key, ask for the associated value and assign
         """
