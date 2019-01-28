@@ -9,8 +9,11 @@ Contains the pytables description classes for certain cal files
 
 import tables
 from tables import *
+import numpy as np
+import ctypes
 
 strLength = 100
+
 
 def WaveCalDescription(n_wvl):
     wavecal_description = {"pixel_row": UInt16Col(pos=0),  # beam map row
@@ -59,7 +62,6 @@ def FlatCalSoln_Description(nWvlBins=13):
             "weightFlags" : UInt16Col(nWvlBins), #
             "flag" : UInt16Col()}      #
     return description
-
 
 
 CalLookup_Description = {
@@ -122,29 +124,28 @@ class ObsFileCols(IsDescription):
     NoiseWeight = Float32Col(pos=4)
 
 
-timeMaskReasonList = []
-timeMaskReasonList.append("unknown");
-timeMaskReasonList.append("Flash in r0");
-timeMaskReasonList.append("Flash in r1");
-timeMaskReasonList.append("Flash in r2");
-timeMaskReasonList.append("Flash in r3");
-timeMaskReasonList.append("Flash in r4");
-timeMaskReasonList.append("Flash in r5");
-timeMaskReasonList.append("Flash in r6");
-timeMaskReasonList.append("Flash in r7");
-timeMaskReasonList.append("Flash in r8");
-timeMaskReasonList.append("Flash in r9");
-timeMaskReasonList.append("Merged Flash");
-timeMaskReasonList.append("cosmic");
-timeMaskReasonList.append("poofing");
-timeMaskReasonList.append("hot pixel")
-timeMaskReasonList.append("cold pixel")
-timeMaskReasonList.append("dead pixel")
-timeMaskReasonList.append("manual hot pixel")
-timeMaskReasonList.append("manual cold pixel")
-timeMaskReasonList.append("laser not on")       #Used in flashing wavecals
-timeMaskReasonList.append("laser not off")      #Used in flashing wavecals
-timeMaskReasonList.append("none")   #To be used for photon lists where the photon is NOT time-masked.
+timeMaskReasonList = ["unknown",
+                      "Flash in r0",
+                      "Flash in r1",
+                      "Flash in r2",
+                      "Flash in r3",
+                      "Flash in r4",
+                      "Flash in r5",
+                      "Flash in r6",
+                      "Flash in r7",
+                      "Flash in r8",
+                      "Flash in r9",
+                      "Merged Flash",
+                      "cosmic",
+                      "poofing",
+                      "hot pixel",
+                      "cold pixel",
+                      "dead pixel",
+                      "manual hot pixel",
+                      "manual cold pixel",
+                      "laser not on",       #Used in flashing wavecals
+                      "laser not off",      #Used in flashing wavecals
+                      "none"]  #To be used for photon lists where the photon is NOT time-masked.
 
 timeMaskReason = tables.Enum(timeMaskReasonList)
 
@@ -154,3 +155,27 @@ class TimeMask(tables.IsDescription):
     tBegin = tables.UInt32Col() # beginning time of this mask (clock ticks)
     tEnd   = tables.UInt32Col() # ending time of this mask (clock ticks)
     reason = tables.EnumCol(timeMaskReason, "unknown", base='uint8')
+
+
+# This what is in the binprocessor.c
+PhotonNumpyTypeBin = np.dtype([('resID',np.uint32),
+                            ('timestamp', np.uint32),
+                            ('wvl', np.float32),
+                            ('wSpec', np.float32),
+                            ('wNoise', np.float32)], align=True)
+
+
+# PhotonNumpyType and PhotonCType are based on what we get back from an H5 file (based on ObsFileCols)
+PhotonNumpyType = np.dtype([('ResID', np.uint32),
+                            ('Time', np.uint32),
+                            ('Wavelength', np.float32),
+                            ('SpecWeight', np.float32),
+                            ('NoiseWeight', np.float32)])
+
+
+class PhotonCType(ctypes.Structure):
+    _fields_ = [('ResID', ctypes.c_uint32),
+                ('Time', ctypes.c_uint32),
+                ('Wavelength', ctypes.c_float),
+                ('SpecWeight', ctypes.c_float),
+                ('NoiseWeight', ctypes.c_float)]
