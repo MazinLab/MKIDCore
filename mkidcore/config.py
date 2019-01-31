@@ -23,14 +23,16 @@ def defaultconfigfile():
     return resource_filename(Requirement.parse("mkidcore"), "default.yml")
 
 
-def extract_from_node(keys, node):
-    """attempt extraction of keys from a ruamel.yaml mapping node and return as a dict"""
+def extract_from_node(loader, keys, node):
+    """attempt extraction of keys from a ruamel.yaml mapping node and return as a dict,
+    does not support tagged types"""
     d = {}
     listkeys = [keys] if not isinstance(keys, (list, tuple)) else keys
 
     for k in listkeys:
         try:
-            d[k] = [nv.value for nk, nv in node.value if nk.value == k][0]
+            d[k] = [nv.value if '!' not in nv.tag else loader.construct_object(nv, deep=True)
+                    for nk, nv in node.value if nk.value == k][0]
         except IndexError:
             pass
     return d
