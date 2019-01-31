@@ -159,10 +159,10 @@ class TimeMask(tables.IsDescription):
 
 # This what is in the binprocessor.c
 PhotonNumpyTypeBin = np.dtype([('resID',np.uint32),
-                            ('timestamp', np.uint32),
-                            ('wvl', np.float32),
-                            ('wSpec', np.float32),
-                            ('wNoise', np.float32)], align=True)
+                               ('timestamp', np.uint32),
+                               ('wvl', np.float32),
+                               ('wSpec', np.float32),
+                               ('wNoise', np.float32)], align=True)
 
 
 # PhotonNumpyType and PhotonCType are based on what we get back from an H5 file (based on ObsFileCols)
