@@ -1,11 +1,13 @@
 from __future__ import print_function
-import re, os
+import re
 import ruamel.yaml
 from pkg_resources import Requirement, resource_filename
 from mkidcore.utils import caller_name
-from mkidcore.corelog import getLogger, setup_logging
+from mkidcore.corelog import getLogger
 from multiprocessing import RLock
 import copy
+import time
+from datetime import datetime
 try:
     from StringIO import StringIO
     import ConfigParser as configparser
@@ -555,6 +557,17 @@ def ingestoldconfigs(cfiles=('beammap.align.cfg', 'beammap.clean.cfg', 'beammap.
     return config
 
 
+def tagstr(x, cfg=None):
+    """tag a string with canonical things {time}=time.time(), {utc}=UTC timestamp,
+    {night}=UTCYYYMMDD of night start, {instrument}=MEC|DARKNESS, requires a config with .instrument.name"""
+    #TODO implement night
+    try:
+        inst = cfg.instrument.name
+    except (AttributeError, KeyError):
+        inst = 'None'
+
+    return x.format(time=int(time.time()), utc=datetime.utcnow().strftime("%Y%m%d%H%M"),
+                    night='<UTCNight>', instrument=inst)
 
 #TODO test .c .lc, .a
 
