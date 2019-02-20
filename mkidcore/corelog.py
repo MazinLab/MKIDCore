@@ -91,6 +91,8 @@ def create_log(name, logfile='', console=True, mpsafe=True, propagate=False,
         handler.setFormatter(logging.Formatter(fmt))
         handler.setLevel(level)
         log.addHandler(handler)
+    else:
+        logging.getLogger().debug('not adding file handler to {}'.format(name))
 
     if console and not len(list(filter(lambda h: type(h) == logging.StreamHandler, log.handlers))):
         handler = logging.StreamHandler(sys.stdout if stdout else sys.stderr)
@@ -98,7 +100,7 @@ def create_log(name, logfile='', console=True, mpsafe=True, propagate=False,
         handler.setLevel(level)
         log.addHandler(handler)
     else:
-        print('not adding console handler to {}'.format(name))
+        logging.getLogger().debug('not adding console handler to {}'.format(name))
 
     log.setLevel(level)
     log.propagate = propagate
