@@ -70,6 +70,7 @@ h5FileFlags = {'good': 0,  # No flags!
 
 HOTPIXEL = badpixcal['hot']
 DEADPIXEL = badpixcal['dead']
+GOODPIXEL = 0
 
 
 def valid(flag, error=False):
