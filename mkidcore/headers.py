@@ -58,7 +58,7 @@ def FlatCalSoln_Description(nWvlBins=13, max_power=10):
                     "weight": Float64Col(nWvlBins),  #
                     "spectrum": Float64Col(nWvlBins),  #
                     "err": Float64Col(nWvlBins),
-                    "coeff": Float64Col(max_power), #
+                    "coeff": Float64Col(max_power+1), #
                     "bad": UInt16Col(),
                     "flag": UInt16Col()}  #
     return description
