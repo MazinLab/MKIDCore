@@ -75,23 +75,15 @@ def makedark(images, et, badmask=None):
     return data
 
 
-def makeflat(images, dark, et, min=1, max=np.inf, medlim=100, colslice=None, badmask=None):
+def makeflat(images, dark, et, badmask=None):
     data = np.sum([i - dark for i in images], axis=0, dtype=float)
     data /= et
-    data.clip(min, max, out=data)
-    data[data==0] = 1
-    medDat = data.copy()
-
-    bmask = badmask if badmask is not None else np.zeros_like(images[0], dtype=bool)
-    #medDat[bmask & (data <= medlim)] = 0
-    #medDat = medDat[:, colslice]
-    #return np.median(medDat[medDat.nonzero()]) / data
-
-    medDat[bmask] = 0
-    medDat = medDat[:, colslice]
-    med = np.median(medDat[medDat.nonzero()])
-    return 1.0*med/data
-
+    if badmask is not None:
+        data[badmask]=0
+    med = np.median(data[data>0])
+    flat = data/med
+    flat[flat<=0] = np.amin(flat[flat>0])
+    return flat
 
 
 def combineHDU(images, header={}, fname='file.fits', name='image', save=True, threaded=True):
@@ -110,16 +102,12 @@ def combineHDU(images, header={}, fname='file.fits', name='image', save=True, th
 
 
 class CalFactory(object):
-    def __init__(self, kind, min=0, max=np.inf, images=tuple(), dark=None, flat=None, colslice=None, medlim=100):
+    def __init__(self, kind, images=tuple(), dark=None, flat=None):
         """kind = dark|flat|avg"""
         self.images = list(images)
-        self.min = min
-        self.max = max
         self.dark = dark
         self.flat = flat
         self.kind = kind.lower()
-        self.colslice = colslice
-        self.medlim = medlim
 
     def reset(self, image0, **kwargs):
         """kwords are same as for __init__"""
@@ -159,14 +147,13 @@ class CalFactory(object):
             ret.data = makedark(idata, et)
         elif self.kind == 'flat':
             d = np.zeros_like(ret.data) if self.dark is None else self.dark.data
-            ret.data = makeflat(idata, d, et, min=self.min, max=self.max, medlim=self.medlim,
-                                colslice=self.colslice, badmask=badmask)
+            ret.data = makeflat(idata, d, et, badmask=badmask)
             ret.header['darkfile'] = None if self.dark is None else self.dark.header['filename']
         elif self.kind[:3] == 'avg':
             d = np.zeros_like(ret.data) if self.dark is None else self.dark.data
             f = np.ones_like(ret.data) if self.flat is None else self.flat.data
             ret.data = (np.sum(idata, axis=0, dtype=float)/et - d)
-            ret.data *= f
+            ret.data /= f
             # previously the flat was only applied at nonzero pixels
             # e.g. ret.data[ret.data>0] *= f[ret.data>0]
             ret.header['flatfile'] = None if self.flat is None else self.flat.header['filename']
@@ -175,7 +162,7 @@ class CalFactory(object):
             d = np.zeros_like(ret.data) if self.dark is None else self.dark.data
             f = np.ones_like(ret.data) if self.flat is None else self.flat.data
             ret.data = np.sum(idata, axis=0, dtype=float) - d*len(idata)
-            ret.data *= f
+            ret.data /= f
             # previously the flat was only applied at nonzero pixels
             # e.g. ret.data[ret.data>0] *= f[ret.data>0]
             ret.header['flatfile'] = None if self.flat is None else self.flat.header['filename']
