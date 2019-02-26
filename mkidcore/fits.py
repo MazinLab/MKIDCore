@@ -83,9 +83,15 @@ def makeflat(images, dark, et, min=1, max=np.inf, medlim=100, colslice=None, bad
     medDat = data.copy()
 
     bmask = badmask if badmask is not None else np.zeros_like(images[0], dtype=bool)
-    medDat[bmask & (data <= medlim)] = 0
+    #medDat[bmask & (data <= medlim)] = 0
+    #medDat = medDat[:, colslice]
+    #return np.median(medDat[medDat.nonzero()]) / data
+
+    medDat[bmask] = 0
     medDat = medDat[:, colslice]
-    return np.median(medDat[medDat.nonzero()]) / data
+    med = np.median(medDat[medDat.nonzero()])
+    return 1.0*med/data
+
 
 
 def combineHDU(images, header={}, fname='file.fits', name='image', save=True, threaded=True):
@@ -131,7 +137,7 @@ class CalFactory(object):
         spawn = isinstance(threaded, bool) and threaded
 
         sv = ' Will save to {}'.format(fname) if save else ''
-        getLogger(__name__).info(('Generating "{}" from {} images '
+        getLogger(__name__).debug(('Generating "{}" from {} images '
                                  'using method {} in {} thread.'+sv).format(name, len(self.images), self.kind,
                                                                             ('a new' if spawn else 'this')))
         if not self.images:
