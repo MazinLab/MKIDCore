@@ -28,21 +28,6 @@ speccal = {'good': 0,  # No flagging.
            'undetermined': 99  # Flag status is undetermined.
            }
 
-# Wavelength calibration flags
-wavecal = {0: "histogram fit - converged and validated",
-           1: "histogram not fit - not enough data points",
-           2: "histogram not fit - too much data (hot pixel)",
-           3: "histogram not fit - not enough data left after arrival time cut",
-           4: "histogram not fit - not enough data left after negative phase only cut",
-           5: "histogram not fit - not enough histogram bins to fit the model",
-           6: "histogram not fit - best fit did not converge",
-           7: "histogram not fit - best fit converged but failed validation",
-           10: "energy fit - converged and validated",
-           11: "energy not fit - not enough data points",
-           12: "energy not fit - data not monotonic enough",
-           13: "energy not fit - best fit did not converge",
-           14: "energy not fit - best fit converged but failed validation"}
-
 # Bad pixel calibration flags (including hot pixels, cold pixels, etc.)
 badpixcal = {'good': 0,  # No flagging.
              'hot': 1,  # Hot pixel
