@@ -65,11 +65,10 @@ h5FileFlags = {'good': 0,  # No flags!
                'noDacTone': 1,  # pixel not given a DAC tone in readout
                'beamMapFailed': 2,  # Bad beammap
                'waveCalFailed': 4,  # No wavecal solution
-               'flatCalFailed': 8  # No flatcal solution
-               }
+               'flatCalFailed': 8,  # No flatcal solution
+               'hotPixel': 16}
 
-HOTPIXEL = badpixcal['hot']
-DEADPIXEL = badpixcal['dead']
+HOTPIXEL = h5FileFlags['hot']
 GOODPIXEL = 0
 
 
