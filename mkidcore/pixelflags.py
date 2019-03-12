@@ -53,7 +53,7 @@ h5FileFlags = {'good': 0,  # No flags!
                'flatCalFailed': 8,  # No flatcal solution
                'hotPixel': 16}
 
-HOTPIXEL = h5FileFlags['hot']
+HOTPIXEL = h5FileFlags['hotPixel']
 GOODPIXEL = 0
 
 
