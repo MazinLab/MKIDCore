@@ -154,7 +154,10 @@ class ConfigThing(dict):
 
     def __setattr__(self, key, value):
         if self.__frozen and not key.startswith('_'):
-            raise AttributeError('Use register to add config attributes')
+            if key in self:
+                raise AttributeError('Use update to change configuration settings')
+            else:
+                raise AttributeError('Use register to add configuration settings')
         else:
             object.__setattr__(self, key, value)
 
