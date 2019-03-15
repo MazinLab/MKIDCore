@@ -105,7 +105,7 @@ class Beammap(object):
 
     def loadFrequencies(self, filepath):
         self.freqpath = filepath
-        powerSweeps = glob.glob(filepath)
+        powerSweeps = glob(filepath)
         if not powerSweeps:
             raise FileNotFoundError('No powersweeps found matching {}'.format(filepath))
         psData = np.loadtxt(powerSweeps[0])
