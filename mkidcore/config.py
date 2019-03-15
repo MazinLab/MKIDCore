@@ -7,6 +7,7 @@ from mkidcore.corelog import getLogger
 from multiprocessing import RLock
 import copy
 import time
+import os
 from datetime import datetime
 try:
     from StringIO import StringIO
@@ -19,6 +20,16 @@ RESERVED = ('._c', '._a')
 
 yaml = ruamel.yaml.YAML()
 yaml_object = ruamel.yaml.yaml_object
+
+
+class _BeamDict(dict):
+    def __missing__(self, key):
+        bfile = os.path.join(os.path.dirname(__file__), key.lower()+'.bmap')
+        self[key] = bfile
+        return bfile
+
+
+DEFAULT_BMAP_CFGFILES = _BeamDict()
 
 
 def defaultconfigfile():

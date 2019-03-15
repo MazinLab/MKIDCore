@@ -16,7 +16,7 @@ from mpl_toolkits.axes_grid1 import axes_size, make_axes_locatable
 import time
 import mkidcore.corelog as pipelinelog
 import mkidcore.config
-from mkidreadout.configuration.beammap.beammap import Beammap
+from mkidcore.objects import Beammap
 import astropy.constants
 import pkg_resources as pkg
 
