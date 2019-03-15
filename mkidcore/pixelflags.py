@@ -6,6 +6,7 @@ Definitions of all data flags used by the pipeline.
 Currently dictionaries to map flag descriptions to integer values.
 May update to use pytables Enums at some point down the road....
 """
+from mkidcore.corelog import getLogger
 
 # Flat cal. flags:
 flatcal = {'good': 0,  # No flagging.
@@ -60,10 +61,9 @@ GOODPIXEL = 0
 def valid(flag, error=False):
     """Test flag (or array of flags) for validity"""
     # TODO implement
+    # getLogger(__name__).warning('Flag validity test not yet implemented, assuming valid.')
 
     valid = True
-    invalidflag = 0
     if error and not valid:
-        raise ValueError('{} is not a valid flag.'.format(invalidflag))
-
+        raise ValueError('{} is not a valid flag.'.format('FOO'))
     return valid
