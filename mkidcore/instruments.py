@@ -1,6 +1,7 @@
 import re
 from mkidcore.corelog import getLogger
 import os
+import numpy as np
 
 MEC_FEEDLINE_INFO = dict(num=10, width=14, length=146)
 DARKNESS_FEEDLINE_INFO = dict(num=5, width=25, length=80)
