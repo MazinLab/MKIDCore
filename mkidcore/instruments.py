@@ -96,7 +96,7 @@ def CONEX2PIXEL(xCon, yCon):
 
     xPos, yPos = con2Pix(xCon, yCon, func)
 
-    return [-xPos, -yPos]
+    return [xPos, yPos]
 
 
 def roachnum(fl, band, instrument='MEC'):
