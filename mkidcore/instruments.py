@@ -22,9 +22,17 @@ MEC_FL_NUM_MAP = {v: str(k) for k, v in MEC_NUM_FL_MAP.items()}
 
 DARKNESS_FL_NUM_MAP = {v: str(k) for k, v in MEC_NUM_FL_MAP.items()}
 
-ROACHES = {'mec': MEC_NUM_FL_MAP.keys(), 'darkness': DARKNESS_NUM_FL_MAP.keys(),
-           'MEC': MEC_NUM_FL_MAP.keys(), 'DARKNESS': DARKNESS_NUM_FL_MAP.keys()}
-
+ROACHES = {'mec': MEC_NUM_FL_MAP.keys(), 'darkness': DARKNESS_NUM_FL_MAP.keys()}
+ROACHESA = {'mec': [k for k, v in MEC_NUM_FL_MAP.items() if 'a' in v],
+            'darkness': [k for k, v in DARKNESS_NUM_FL_MAP.items() if 'a' in v]}
+ROACHESB = {'mec': [k for k, v in MEC_NUM_FL_MAP.items() if 'b' in v],
+            'darkness': [k for k, v in DARKNESS_NUM_FL_MAP.items() if 'b' in v]}
+for k in ROACHES.keys():
+    ROACHES[k.upper()] = ROACHES[k]
+for k in ROACHESA.keys():
+    ROACHESA[k.upper()] = ROACHESA[k]
+for k in ROACHESB.keys():
+    ROACHESB[k.upper()] = ROACHESB[k]
 
 
 def CONEX2PIXEL(xCon, yCon):
@@ -93,7 +101,7 @@ def CONEX2PIXEL(xCon, yCon):
 
 def roachnum(fl, band, instrument='MEC'):
     if instrument.lower() == 'darkness':
-        DARKNESS_FL_NUM_MAP['{}{}'.format(fl, band)]
+        return DARKNESS_FL_NUM_MAP['{}{}'.format(fl, band)]
     elif instrument.lower() == 'mec':
         return MEC_FL_NUM_MAP['{}{}'.format(fl, band)]
 
