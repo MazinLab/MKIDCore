@@ -1,6 +1,7 @@
 from functools import wraps
 import inspect
 import multiprocessing as mp
+import astropy
 
 _manager = None
 
@@ -10,6 +11,13 @@ def manager(*args, **kwargs):
     if _manager is None:
         _manager = mp.Manager(*args, **kwargs)
     return _manager
+
+
+def getnm(x):
+    try:
+        return astropy.units.Unit(x).to('nm')
+    except astropy.units.UnitConversionError:
+        return float(x)
 
 
 def query(question, yes_or_no=False, default="no"):
