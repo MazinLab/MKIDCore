@@ -116,6 +116,8 @@ class ObsHeader(IsDescription):
     wvlCalFile = StringCol(255)
     fltCalFile = StringCol(255)
 
+    metadata = StringCol(4*1024*1024)
+
 
 class ObsFileCols(IsDescription):
     ResID = UInt32Col(pos=0)
