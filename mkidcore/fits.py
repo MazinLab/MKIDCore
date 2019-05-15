@@ -59,7 +59,6 @@ def loadimg(file, ncol, nrow, **kwargs):
 
 def summarize(hdu):
     """generate a nice textual summary"""
-    #TODO flesh out stub
     return ("Total Counts: {:.0f}\n"
             "Exp. Time: {:.0f}\n"
             "Shape: {}x{}").format(hdu.data.sum(),

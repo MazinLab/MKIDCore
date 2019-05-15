@@ -98,7 +98,6 @@ CalLookup_Description = {
 
 
 class ObsHeader(IsDescription):
-    # TODO this needs to change, every new attribute/flag metadata added requires remaking old h5 files!!!
     target = StringCol(255)
     dataDir = StringCol(255)
     beammapFile = StringCol(255)

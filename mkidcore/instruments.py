@@ -13,7 +13,7 @@ MEC_NUM_FL_MAP = {236: '1a', 237: '1b', #238: '5a', 239: '5b',
                   220: '6a', 221: '6b', 222: '7a', 223: '7b', 232: '8a',
                   233: '8b', 228: '9a', 229: '9b', 224: '10a', 225: '10b'}
 
-#TODO FLs are arbitrary as instrument isn't installed
+#NB FLs are arbitrary as instrument isn't installed
 DARKNESS_NUM_FL_MAP = {112: '1a', 114: '1b', 115: '5a', 116: '5b',
                        117: '6a', 118: '6b', 119: '7a', 120: '7b', 121: '8a',
                        122: '8b'}
