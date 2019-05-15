@@ -7,6 +7,30 @@ from mkidcore.corelog import getLogger
 import copy
 
 
+from datetime import datetime
+import json
+
+
+class DashboardState:
+    def __init__(self, string):
+        self._json = json.loads(string)
+        for k in self._json:
+            setattr(self, k, self._json[k])
+        self.utc = datetime.strptime(self.utc, "%Y%m%d%H%M%S")
+
+    def __eq__(self, other):
+        for k in (k for k in self.__dict__ if k != '_json'):
+            if k not in other.__dict__ or other.__dict__[k] != self.__dict__[k]:
+                if k == 'utc':
+                    pass
+                else:
+                    return False
+        return True
+
+    def __repr__(self):
+        return json.dumps(self._json)
+
+
 class Beammap(object):
     """
     Simple wrapper for beammap file.
