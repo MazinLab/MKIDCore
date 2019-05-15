@@ -293,10 +293,17 @@ class ConfigThing(dict):
         if krest:
             self[k1]._update(krest, value, comment=comment)
         else:
-            # TODO add checking against allowed
+            if not self.allowed(key, value):
+                raise ValueError('{} is not an allowed value for {}'.format(value, key))
             self[k1] = value
             if comment is not None:
                 self._dict[k1+'._c'] = comment
+
+    def allowed(self, key, value):
+        if key+'._a' in self._dict:
+            getLogger(__name__).warning(str(key)+' has restrictions no allowed values but checking has not yet been '
+                                        'implemented')
+        return True
 
     def _register(self, key, initialvalue, allowed=None, comment=None):
         k1, _, krest = key.partition('.')
