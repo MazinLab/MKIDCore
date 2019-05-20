@@ -12,6 +12,7 @@ from tables import *
 import numpy as np
 import ctypes
 
+METADATA_BLOCK_BYTES=4*1024*1024
 strLength = 100
 
 
@@ -115,8 +116,8 @@ class ObsHeader(IsDescription):
     energyBinWidth = Float32Col()
     wvlCalFile = StringCol(255)
     fltCalFile = StringCol(255)
-
-    metadata = StringCol(4*1024*1024)
+    
+    metadata = StringCol(METADATA_BLOCK_BYTES)
 
 
 class ObsFileCols(IsDescription):

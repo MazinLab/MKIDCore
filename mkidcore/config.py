@@ -82,6 +82,7 @@ class ConfigThing(dict):
     """
     yaml_tag = u'!configdict'
     __frozen = False
+
     def __init__(self, *args):
         """
         If initialized with a list of tuples cannonization is not enforced on values
@@ -273,7 +274,7 @@ class ConfigThing(dict):
 
     def update(self, key, value, comment=None):
         """ update will register iff the update would override an inherited value  e.g. if roaches.ip is set but
-        roaches.r114.ip is not  roaches.r114.ip would yield roaches.ip but updateing roaches.r114.ip would create a
+        roaches.r114.ip is not  roaches.r114.ip would yield roaches.ip but updating roaches.r114.ip would create a
         new setting unique to roaches.r114
 
         """
