@@ -228,18 +228,20 @@ class ConfigThing(dict):
                 except:
                     pass
                 try:
-                    allowed = self[k1 + '._a']
+                    allowed = self[key + '._a']
                 except:
                     pass
                 return self[key], comment, allowed
             else:
                 return self[key]
 
-
     def __contains__(self, k):
         """Contains only implements explicit keys, inheritance is not checked."""
         with self._lock:
             k1, _, krest = k.partition('.')
+            if krest in ('_a', '_c'):
+                k1 = k
+                krest = ''
             if super(ConfigThing, self).__contains__(k1):
                 if krest:
                     return krest in self[k1]
@@ -288,7 +290,7 @@ class ConfigThing(dict):
                 except KeyError:
                     raise KeyError("Setting '{}' is not registered or inherited".format(key))
 
-    def _update(self, key, value, comment=None, ):
+    def _update(self, key, value, comment=None):
         k1, _, krest = key.partition('.')
 
         if krest:
@@ -298,10 +300,10 @@ class ConfigThing(dict):
                 raise ValueError('{} is not an allowed value for {}'.format(value, key))
             self[k1] = value
             if comment is not None:
-                self._dict[k1+'._c'] = comment
+                self[k1+'._c'] = comment
 
     def allowed(self, key, value):
-        if key+'._a' in self._dict:
+        if key+'._a' in self:
             getLogger(__name__).warning(str(key)+' has restrictions no allowed values but checking has not yet been '
                                         'implemented')
         return True
@@ -326,7 +328,7 @@ class ConfigThing(dict):
         self.keyisvalid(key, error=True)
         self.registered(key, error=True)
         try:
-            tree,_,leaf=key.rpartition('.')
+            tree, _, leaf = key.rpartition('.')
             return self.get(tree)[leaf+'._c']
         except KeyError:
             return None
