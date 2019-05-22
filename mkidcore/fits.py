@@ -118,7 +118,7 @@ class CalFactory(object):
         self.images.append(image)
 
     def generate(self, fname='calib.fits', name='calimage', badmask=None, dtype=float, bias=0, header={},
-                 threaded=False, save=False):
+                 threaded=False, save=False, overwrite=False):
 
         tic = time.time()
         spawn = isinstance(threaded, bool) and threaded
@@ -178,7 +178,7 @@ class CalFactory(object):
 
         if save:
             getLogger(__name__).debug('Saving fits to {}'.format(fname))
-            ret.writeto(fname)
+            ret.writeto(fname, overwrite=overwrite)
 
         getLogger(__name__).debug('Generation took {:.1f} ms'.format((time.time()-tic)*1000))
 
