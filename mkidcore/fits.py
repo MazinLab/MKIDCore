@@ -174,7 +174,7 @@ class CalFactory(object):
         ret.header['filename'] = os.path.splitext(os.path.basename(fname))[0]+'.fits'
         ret.header['name'] = name
         for k, v in header.items():
-            ret.header[k] = v
+            ret.header[k] = str(v)  # fast dirty fix
 
         if save:
             getLogger(__name__).debug('Saving fits to {}'.format(fname))
