@@ -99,6 +99,22 @@ def CONEX2PIXEL(xCon, yCon):
     return [xPos, yPos]
 
 
+def compute_wcs_ref_pixel(positions, center=(0, 0), target_center_at_ref=(0, 0), instrument='mec'):
+    """ A function to convert the connex offset to pixel displacement
+    :param positions: conext position(s)
+    :param center: conex center position
+    :param target_center_at_ref: pixel position of conex center
+    :param instrument: the instrument
+    :return: The reference pixel 
+    """
+    if instrument.lower() != 'mec':
+        raise NotImplementedError('MEC is only supported instrument.')
+    positions = np.asarray(positions)
+    pix = np.asarray(CONEX2PIXEL(positions[0], positions[1])) - np.array(CONEX2PIXEL(*center))
+    pix += np.asarray(target_center_at_ref).reshape(2)
+    return pix[::-1]
+
+
 def roachnum(fl, band, instrument='MEC'):
     if instrument.lower() == 'darkness':
         return DARKNESS_FL_NUM_MAP['{}{}'.format(fl, band)]
