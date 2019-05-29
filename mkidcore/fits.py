@@ -141,6 +141,8 @@ class CalFactory(object):
 
         ret = fits.PrimaryHDU(data=self.images[0].data.astype(dtype), header=self.images[0].header)
 
+        ret.header.update(header)
+
         if self.kind == 'dark':
             ret.data = makedark(idata, et)
         elif self.kind == 'flat':
@@ -172,8 +174,6 @@ class CalFactory(object):
         ret.header['objtype'] = self.kind
         ret.header['filename'] = os.path.splitext(os.path.basename(fname))[0]+'.fits'
         ret.header['name'] = name
-        for k, v in header.items():
-            ret.header[k] = str(v)  # fast dirty fix
 
         if save:
             getLogger(__name__).debug('Saving fits to {}'.format(fname))
