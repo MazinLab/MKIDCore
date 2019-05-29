@@ -124,16 +124,15 @@ class CalFactory(object):
         spawn = isinstance(threaded, bool) and threaded
 
         sv = ' Will save to {}'.format(fname) if save else ''
-        getLogger(__name__).debug(('Generating "{}" from {} images '
-                                 'using method {} in {} thread.'+sv).format(name, len(self.images), self.kind,
-                                                                            ('a new' if spawn else 'this')))
+        getLogger(__name__).debug(('Generating "{}" from {} images using method {} in {} thread.'+
+                                   sv).format(name, len(self.images), self.kind, ('a new' if spawn else 'this')))
         if not self.images:
             return None
 
         if spawn:
             q = Queue()
             t = Thread(target=self.generate, args=tuple(), kwargs=dict(fname=fname, name=name, badmask=badmask,
-                                                                     dtype=dtype, threaded=q, save=save))
+                                                                       dtype=dtype, threaded=q, save=save))
             t.start()
             return q
 
