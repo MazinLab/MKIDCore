@@ -75,6 +75,7 @@ class Beammap(object):
 
     @classmethod
     def from_yaml(cls, constructor, node):
+        #TODO I don't know why I used extract_from_node here and dict(loader.construct_pairs(node)) elsewhere
         d = mkidcore.config.extract_from_node(constructor,('file', 'nrows', 'ncols', 'default', 'freqfiles'), node)
 
         if 'default' in d:

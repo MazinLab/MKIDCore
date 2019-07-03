@@ -110,3 +110,29 @@ def caller_name(skip=2):
         name.append(codename)  # function or a method
     del parentframe
     return ".".join(name)
+
+
+def derangify(s,delim=','):
+    """
+    Takes a range in form of "a-b" and generate a list of numbers between
+    a and b inclusive.
+    Also accepts comma separated ranges like "a-b,c-d,f" will build a
+    list which will include
+    Numbers from a to b, a to d and f
+    http://code.activestate.com/recipes/577279-generate-list-of-
+    numbers-from-hyphenated-and-comma/
+    """
+    s="".join(s.split())#removes white space
+    r=set()
+    for x in s.split(delim):
+        t=x.split('-')
+        if len(t) not in [1,2]:
+            raise SyntaxError("'{}'".format(s)+
+                              "does not seem to be derangeifyable")
+        if len(t)==1:
+            r.add(int(t[0]))
+        else:
+            r.update(set(range(int(t[0]),int(t[1])+1)))
+    l=list(r)
+    l.sort()
+    return tuple(l)
