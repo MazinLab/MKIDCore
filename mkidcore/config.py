@@ -412,6 +412,8 @@ def cannonizekey(k):
 
 
 def cannonizevalue(v):
+    if isinstance(v, (float, int)):
+        return v
     try:
         v=dequote(v)
     except:
