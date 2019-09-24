@@ -9,9 +9,9 @@ DARKNESS_FEEDLINE_INFO = dict(num=5, width=25, length=80)
 DEFAULT_ARRAY_SIZES = {'mec': (140, 146), 'darkness': (80, 125)}
 
 
-MEC_NUM_FL_MAP = {236: '1a', 237: '1b', #238: '5a', 239: '5b',220: '6a',
-                  221: '6b', 222: '7a', 223: '7b', 232: '8a',
-                  233: '8b', 228: '9a', 229: '9b', 224: '10a', 225: '10b'}
+MEC_NUM_FL_MAP = {236: '1a', 237: '1b', 238: '6a',239: '6b', 
+                  222: '7a', 223: '7b', 232: '8a', 233: '8b', 
+                  228: '9a', 229: '9b', 224: '10a', 225: '10b'}
 
 #NB FLs are arbitrary as instrument isn't installed
 DARKNESS_NUM_FL_MAP = {112: '1a', 114: '1b', 115: '5a', 116: '5b',
@@ -129,7 +129,7 @@ def guessFeedline(filename):
     except AttributeError:
         try:
             ip = int(os.path.splitext(filename)[0][-3:])
-            flNum = int(MEC_NUM_FL_MAP[ip][0])
+            flNum = int(MEC_NUM_FL_MAP[ip][:-1])
         except (KeyError, ValueError, IndexError):
             getLogger(__name__).warning('Could not guess feedline from filename {}.')
             raise ValueError('Unable to guess feedline')
