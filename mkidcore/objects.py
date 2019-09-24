@@ -203,6 +203,100 @@ class Beammap(object):
                      float(self.frequencies[index])]
         return resonator
 
+    def retuneMap(self, newIDsboardA=None, newIDsboardB=None):
+        """
+        newIDs takes in the output of the tuneupfrequencies.py Correlator class in the form of an Nx2 txt file. Column 0
+        are the old resIDs, column 1 the new resIDs.
+        fullFL = True assumes that both boards which read out the feedline are given. If false, an error will be thrown
+        if there are conflicts with resonators being reassigned.
+        """
+        self.reassignmentList = None
+        a, b = None, None
+        if newIDsboardA is not None:
+            a = np.genfromtxt(str(newIDsboardA))
+        if newIDsboardB is not None:
+            b = np.genfromtxt(str(newIDsboardB))
+
+        feedlineGuess = np.floor(np.average(a[~np.isnan(a[:, 0])][:, 0]) / 10000)
+        feedlineBase = feedlineGuess * 10000
+
+        aMask = []
+        for i in range(len(a)):
+            if not np.isnan(a[i][0]) and not np.isnan(a[i][1]):
+                if (a[i][0] <= feedlineBase + 1023) and (a[i][1] <= feedlineBase + 1023):
+                    aMask.append(True)
+                else:
+                    aMask.append(False)
+            elif not np.isnan(a[i][0]) and np.isnan(a[i][1]):
+                if (a[i][0] <= feedlineBase + 1023):
+                    aMask.append(True)
+                else:
+                    aMask.append(False)
+            elif np.isnan(a[i][0]) and not np.isnan(a[i][1]):
+                if (a[i][1] <= feedlineBase + 1023):
+                    aMask.append(True)
+                else:
+                    aMask.append(False)
+        a = a[aMask]
+
+        bMask = []
+        for i in range(len(b)):
+            if not np.isnan(b[i][0]) and not np.isnan(b[i][1]):
+                if (b[i][0] >= feedlineBase + 1024) and (b[i][1] >= feedlineBase + 1024):
+                    bMask.append(True)
+                else:
+                    bMask.append(False)
+            elif not np.isnan(b[i][0]) and np.isnan(b[i][1]):
+                if (b[i][0] <= feedlineBase + 1024):
+                    bMask.append(True)
+                else:
+                    bMask.append(False)
+            elif np.isnan(b[i][0]) and not np.isnan(b[i][1]):
+                if (b[i][1] <= feedlineBase + 1024):
+                    bMask.append(True)
+                else:
+                    bMask.append(False)
+        b = b[bMask]
+
+        if a is not None and b is not None:
+            self.reassignmentList = np.concatenate((a, b), axis=0)
+        elif a is None and b is not None:
+            self.reassignmentList = b
+        else:
+            self.reassignmentList = a
+
+        self.newResIDs = np.full_like(self.resIDs, np.nan)
+        self.newFlags = np.full_like(self.flags, np.nan)
+
+        for i in self.reassignmentList:
+            if i[2] == 0:
+                mask = self.resIDs == i[0]
+                self.newResIDs[mask] = i[1]
+                self.newFlags[mask] = 0
+            elif i[2] == 3:
+                mask = self.resIDs == i[0]
+                self.newResIDs[mask] = i[1]
+                self.newFlags[mask] = 2
+
+        mask = np.floor(self.resIDs / 10000) == feedlineGuess
+        old = self.resIDs[mask]
+        new = self.newResIDs[mask]
+        unused = np.setdiff1d(old, new)
+
+        for i in range(len(self.resIDs)):
+            if (np.floor(self.resIDs[i] / 10000) == feedlineGuess) and np.isnan(self.newResIDs[i]):
+                self.newResIDs[i] = unused[0]
+                for j in self.reassignmentList:
+                    if (j[0] == self.newResIDs[i]) and np.isnan(j[1]):
+                        self.newFlags[i] = 1
+                    elif np.isnan(j[0]) and (j[1] == self.newResIDs[i]):
+                        self.newFlags[i] = 2
+                unused = np.delete(unused, 0)
+
+        mask = ~np.isnan(self.newResIDs)
+        self.resIDs[mask] = self.newResIDs[mask]
+        self.flags[mask] = self.newFlags[mask]
+
     def beammapDict(self):
         return {'resID': self.resIDs, 'freqCh': self.freqs, 'xCoord': self.xCoords,
                 'yCoord': self.yCoords, 'flag': self.flags}
@@ -235,5 +329,5 @@ class Beammap(object):
         return 'File: "{}"\nWell Mapped: {}'.format(self.file, self.nrows * self.ncols - (self.flags!=0).sum())
 
 
-
 mkidcore.config.yaml.register_class(Beammap)
+
