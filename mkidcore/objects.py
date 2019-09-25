@@ -5,7 +5,7 @@ import pkg_resources as pkg
 import mkidcore.config
 from mkidcore.corelog import getLogger
 import copy
-
+from mkidreadout.configuration.beammap.flags import beamMapFlags
 
 from datetime import datetime
 import json
@@ -272,11 +272,11 @@ class Beammap(object):
             if i[2] == 0:
                 mask = self.resIDs == i[0]
                 self.newResIDs[mask] = i[1]
-                self.newFlags[mask] = 0
+                self.newFlags[mask] = beamMapFlags['good']
             elif i[2] == 3:
                 mask = self.resIDs == i[0]
                 self.newResIDs[mask] = i[1]
-                self.newFlags[mask] = 2
+                self.newFlags[mask] = beamMapFlags['failed']
 
         mask = np.floor(self.resIDs / 10000) == feedlineGuess
         old = self.resIDs[mask]
@@ -288,12 +288,17 @@ class Beammap(object):
                 self.newResIDs[i] = unused[0]
                 for j in self.reassignmentList:
                     if (j[0] == self.newResIDs[i]) and np.isnan(j[1]):
-                        self.newFlags[i] = 1
+                        self.newFlags[i] = beamMapFlags['noDacTone']
                     elif np.isnan(j[0]) and (j[1] == self.newResIDs[i]):
-                        self.newFlags[i] = 2
+                        self.newFlags[i] = beamMapFlags['failed']
                 unused = np.delete(unused, 0)
+            if np.isnan(self.flags[i]):
+                self.newFlags[i] = beamMapFlags['noDacTone']
 
-        mask = ~np.isnan(self.newResIDs)
+        for i in range(len(self.resIDs[mask])):
+            if self.resIDs[mask][i] != 0:
+                self.newResIDs[mask][i] = self.resIDs[mask][i]
+
         self.resIDs[mask] = self.newResIDs[mask]
         self.flags[mask] = self.newFlags[mask]
 
