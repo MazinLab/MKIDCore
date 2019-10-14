@@ -203,6 +203,9 @@ class Beammap(object):
                      float(self.frequencies[index])]
         return resonator
 
+    def getResonatorFlag(self, resID):
+        return self.flags[self.resIDs == resID]
+
     def retuneMap(self, newIDsboardA=None, newIDsboardB=None):
         """
         newIDs takes in the output of the tuneupfrequencies.py Correlator class in the form of an Nx2 txt file. Column 0
