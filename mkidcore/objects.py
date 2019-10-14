@@ -269,11 +269,11 @@ class Beammap(object):
         self.newFlags = np.full_like(self.flags, np.nan)
 
         for i in self.reassignmentList:
-            if i[2] == 0:
+            if i[2] == 1:
                 mask = self.resIDs == i[0]
                 self.newResIDs[mask] = i[1]
                 self.newFlags[mask] = beamMapFlags['good']
-            elif i[2] == 3:
+            elif i[2] == 4:
                 mask = self.resIDs == i[0]
                 self.newResIDs[mask] = i[1]
                 self.newFlags[mask] = beamMapFlags['failed']
@@ -283,24 +283,22 @@ class Beammap(object):
         new = self.newResIDs[mask]
         unused = np.setdiff1d(old, new)
 
-        for i in range(len(self.resIDs)):
-            if (np.floor(self.resIDs[i] / 10000) == feedlineGuess) and np.isnan(self.newResIDs[i]):
+        for i, j in enumerate(self.resIDs):
+            if (np.floor(j / 10000) == feedlineGuess) and np.isnan(self.newResIDs[i]):
                 self.newResIDs[i] = unused[0]
-                for j in self.reassignmentList:
-                    if (j[0] == self.newResIDs[i]) and np.isnan(j[1]):
-                        self.newFlags[i] = beamMapFlags['noDacTone']
-                    elif np.isnan(j[0]) and (j[1] == self.newResIDs[i]):
-                        self.newFlags[i] = beamMapFlags['failed']
+                if unused[0] in self.reassignmentList[:, 1]:
+                    self.newFlags[i] = beamMapFlags['noDacTone']
+                elif unused[0] in self.reassignmentList[:, 0]:
+                    self.newFlags[i] = beamMapFlags['failed']
+                else:
+                    self.newFlags[i] = beamMapFlags['noDacTone']
                 unused = np.delete(unused, 0)
-            if np.isnan(self.flags[i]):
-                self.newFlags[i] = beamMapFlags['noDacTone']
 
-        for i in range(len(self.resIDs[mask])):
-            if self.resIDs[mask][i] != 0:
-                self.newResIDs[mask][i] = self.resIDs[mask][i]
+        mask2 = mask & (self.flags == 0)
 
         self.resIDs[mask] = self.newResIDs[mask]
-        self.flags[mask] = self.newFlags[mask]
+        self.flags[mask2] = self.newFlags[mask2]
+
 
     def beammapDict(self):
         return {'resID': self.resIDs, 'freqCh': self.freqs, 'xCoord': self.xCoords,
