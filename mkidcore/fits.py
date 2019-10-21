@@ -110,12 +110,16 @@ def combineHDU(images, header={}, fname='file.fits', name='image', save=True, th
 
 
 class CalFactory(object):
-    def __init__(self, kind, images=tuple(), dark=None, flat=None):
-        """kind = dark|flat|avg"""
+    def __init__(self, kind, images=tuple(), dark=None, flat=None, mask=None):
+        """kind = dark|flat|avg
+
+        mask will be applied to output products if specified and must match the shape of the images
+        """
         self.images = list(images)
         self.dark = dark
         self.flat = flat
         self.kind = kind.lower()
+        self.mask = mask
 
     def reset(self, image0, **kwargs):
         """kwords are same as for __init__"""
@@ -127,7 +131,7 @@ class CalFactory(object):
         self.images.append(image)
 
     def generate(self, fname='calib.fits', name='calimage', badmask=None, dtype=float, bias=0, header={},
-                 threaded=False, save=False, overwrite=False):
+                 threaded=False, save=False, overwrite=False, maskvalue=np.nan):
 
         tic = time.time()
         spawn = isinstance(threaded, bool) and threaded
@@ -184,6 +188,9 @@ class CalFactory(object):
         ret.header['filename'] = os.path.splitext(os.path.basename(fname))[0]+'.fits'
         ret.header['name'] = name
 
+        if self.mask is not None:
+            ret.data[self.mask] = maskvalue
+
         if save:
             getLogger(__name__).debug('Saving fits to {}'.format(fname))
             ret.writeto(fname, overwrite=overwrite)
@@ -194,3 +201,5 @@ class CalFactory(object):
             threaded.put(ret)
         else:
             return ret
+
+
