@@ -22,11 +22,14 @@ MEC_FL_NUM_MAP = {v: str(k) for k, v in MEC_NUM_FL_MAP.items()}
 
 DARKNESS_FL_NUM_MAP = {v: str(k) for k, v in MEC_NUM_FL_MAP.items()}
 
-ROACHES = {'mec': MEC_NUM_FL_MAP.keys(), 'darkness': DARKNESS_NUM_FL_MAP.keys()}
+ROACHES = {'mec': MEC_NUM_FL_MAP.keys(), 'darkness': DARKNESS_NUM_FL_MAP.keys(),
+           'bluefors': []}
 ROACHESA = {'mec': [k for k, v in MEC_NUM_FL_MAP.items() if 'a' in v],
-            'darkness': [k for k, v in DARKNESS_NUM_FL_MAP.items() if 'a' in v]}
+            'darkness': [k for k, v in DARKNESS_NUM_FL_MAP.items() if 'a' in v],
+            'bluefors': []}
 ROACHESB = {'mec': [k for k, v in MEC_NUM_FL_MAP.items() if 'b' in v],
-            'darkness': [k for k, v in DARKNESS_NUM_FL_MAP.items() if 'b' in v]}
+            'darkness': [k for k, v in DARKNESS_NUM_FL_MAP.items() if 'b' in v],
+            'bluefors': []}
 for k in list(ROACHES):
     ROACHES[k.upper()] = ROACHES[k]
 for k in list(ROACHESA):

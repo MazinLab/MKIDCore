@@ -45,6 +45,9 @@ class Beammap(object):
                         default beammap.
                     If instance of Beammap, creates a copy
         """
+        if default.lower() == 'bluefors':
+            raise ValueError('There is no default beammap for the bluefors fridge')
+
         self.file = file
         self.resIDs = None
         self.flags = None
