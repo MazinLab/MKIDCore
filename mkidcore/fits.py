@@ -11,6 +11,8 @@ from mkidcore.corelog import getLogger
 from collections import namedtuple
 ImgTuple = namedtuple('img', ['data', 'file', 'time'])
 
+_pool = None
+
 
 def addfitshdu(a,b, copy=False):
     """add the data of two fits hdus together and adjust their headers """
@@ -85,19 +87,26 @@ def makeflat(images, dark, et, badmask=None):
     return flat
 
 
-def combineHDU(images, header={}, fname='file.fits', name='image', save=True, threaded=True):
-    if threaded:
-        pool = ThreadPool(processes=1)
-        async_result = pool.apply_async(combineHDU, (images,), dict(fname=fname, name=name,
-                                            header=header, threaded=False, save=save))
-        return async_result
-
+def _combineHDU(images, header={}, fname='file.fits', name='image', save=True):
     ret = fits.HDUList([fits.PrimaryHDU()]+list(images))  # Primaryhdu empty per fits std. doesn't REALLY matter
     ret[0].header['filename'] = os.path.basename(fname)
     ret[0].header['name'] = os.path.basename(name)
     ret[0].header.update(header)
-    ret.writeto(fname)
+    if save:
+        ret.writeto(fname)
     return ret
+
+
+def combineHDU(images, header={}, fname='file.fits', name='image', save=True, threaded=True):
+    if threaded:
+        global _pool
+        if _pool is None:
+            _pool = ThreadPool(processes=2)
+        async_result = _pool.apply_async(_combineHDU, (images,),
+                                         dict(fname=fname, name=name, header=header, save=save))
+        return async_result
+    else:
+        return _combineHDU(images, fname=fname, name=name, header=header, save=save)
 
 
 class CalFactory(object):
