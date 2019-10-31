@@ -44,21 +44,11 @@ beammap = {'noDacTone':1,      #Pixel not read out
 wcscal = {}
 general = {}
 
-#META FLAGS
-'beamMapFailed'
-'waveCalFailed'
-'flatCalFailed'
-
-
-HOTPIXEL = h5FileFlags['hotPixel']
-GOODPIXEL = 0
-
-
 FLAG_DICTS = {'wavecal': wavecal, 'flatcal': flatcal, 'speccal': speccal, 'wcscal': wcscal, 'beammap': beammap,
               'general': general, 'pixcal': pixcal}
 
 FLAG_LIST = tuple(['{}.{}'.format(k, v) for k in FLAG_DICTS for v in FLAG_DICTS[k]])
-FLAG_LIST_BITS = tuple([2**i for i in range(FLAG_LIST.size)])
+FLAG_LIST_BITS = tuple([2**i for i in range(len(FLAG_LIST))])
 
 PROBLEM_FLAGS = ('pixcal.hot', 'beammap.notone', )  # TODO finish or make flags objects and build programatically
 
