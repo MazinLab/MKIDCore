@@ -6,56 +6,85 @@ Definitions of all data flags used by the pipeline.
 Currently dictionaries to map flag descriptions to integer values.
 May update to use pytables Enums at some point down the road....
 """
+import numpy as np
 from mkidcore.corelog import getLogger
+wavecal = {'bad':1}
 
 # Flat cal. flags:
-flatcal = {'good': 0,  # No flagging.
-           'infWeight': 1,  # Spurious infinite weight was calculated - weight set to 1.0
-           'zeroWeight': 2,  # Spurious zero weight was calculated - weight set to 1.0
-           'belowWaveCalRange': 10,  # Derived wavelength is below formal validity range of calibration
-           'aboveWaveCalRange': 11,  # Derived wavelength is above formal validity range of calibration
-           'undefined': 20,  # Flagged, but reason is undefined.
-           'undetermined': 99,  # Flag status is undetermined.
+flatcal = {'inf_weight': 1,  # Spurious infinite weight was calculated - weight set to 1.0
+           'zero_eight': 2,  # Spurious zero weight was calculated - weight set to 1.0
+           'below_range': 4,  # Derived wavelength is below formal validity range of calibration
+           'above_range': 8,  # Derived wavelength is above formal validity range of calibration
            }
 
 # Spectral cal. flags
-speccal = {'good': 0,  # No flagging.
-           'infWeight': 1,  # Spurious infinite weight was calculated - weight set to 1.0
-           'LEzeroWeight': 2,  # Spurious less-than-or-equal-to-zero weight was calculated - weight set to 1.0
-           'nanWeight': 3,  # NaN weight was calculated.
-           'belowWaveCalRange': 10,  # Derived wavelength is below formal validity range of calibration
-           'aboveWaveCalRange': 11,  # Derived wavelength is above formal validity range of calibration
-           'undefined': 20,  # Flagged, but reason is undefined.
-           'undetermined': 99  # Flag status is undetermined.
+speccal = {'inf_weight': 1,  # Spurious infinite weight was calculated - weight set to 1.0
+           'lz_weight': 2,  # Spurious less-than-or-equal-to-zero weight was calculated - weight set to 1.0
+           'nan_weight': 4,  # NaN weight was calculated.
+           'below_range': 8,  # Derived wavelength is below formal validity range of calibration
+           'above_range': 16,  # Derived wavelength is above formal validity range of calibration
            }
 
 # Bad pixel calibration flags (including hot pixels, cold pixels, etc.)
-badpixcal = {'good': 0,  # No flagging.
-             'hot': 1,  # Hot pixel
-             'cold': 2,  # Cold pixel
-             'dead': 3,  # Dead pixel
-             'undefined': 20,  # Flagged, but reason is undefined.
-             'undetermined': 99  # Flag status is undetermined.
-             }
+pixcal = {'hot': 1,  # Hot pixel
+          'cold': 2,  # Cold pixel}
+          'unstable': 3
+          }
 
-# Beammap flags (stored in beammap file)
-beamMapFlags = {'good': 0,  # No flagging
-                'failed': 1,  # Beammap failed to place pixel
-                'yFailed': 2,  # Beammap succeeded in x, failed in y
-                'xFailed': 3,  # Beammap succeeded in y, failed in x
-                'wrongFeedline': 4  # Beammap placed pixel in wrong feedline
+# Beammap flags (stored in beammap file)   #If these aren't bit flags then the & eeds to be converted to an ==
+beammap = {'noDacTone':1,      #Pixel not read out
+                'failed':2,         #Beammap failed to place pixel
+                'yFailed':3,        #Beammap succeeded in x, failed in y
+                'xFailed':4,        #Beammap succeeded in y, failed in x
+                'double':5,         #Multiple locations found for pixel
+                'wrongFeedline':6,  #Beammap placed pixel in wrong feedline
+                'duplicatePixel':7  #Beammap placed pixel on top of another one, and no neighbor could be found
                 }
 
-# Flags stored in HDF5 file. Works as a bitmask to allow for multiple flags
-h5FileFlags = {'good': 0,  # No flags!
-               'noDacTone': 1,  # pixel not given a DAC tone in readout
-               'beamMapFailed': 2,  # Bad beammap
-               'waveCalFailed': 4,  # No wavecal solution
-               'flatCalFailed': 8,  # No flatcal solution
-               'hotPixel': 16}
+wcscal = {}
+general = {}
+
+#META FLAGS
+'beamMapFailed'
+'waveCalFailed'
+'flatCalFailed'
+
 
 HOTPIXEL = h5FileFlags['hotPixel']
 GOODPIXEL = 0
+
+
+FLAG_DICTS = {'wavecal': wavecal, 'flatcal': flatcal, 'speccal': speccal, 'wcscal': wcscal, 'beammap': beammap,
+              'general': general, 'pixcal': pixcal}
+
+FLAG_LIST = tuple(['{}.{}'.format(k, v) for k in FLAG_DICTS for v in FLAG_DICTS[k]])
+FLAG_LIST_BITS = tuple([2**i for i in range(FLAG_LIST.size)])
+
+PROBLEM_FLAGS = ('pixcal.hot', 'beammap.notone', )  # TODO finish or make flags objects and build programatically
+
+
+def beammap_flagmap_to_h5_flagmap(beammap_flagmap):
+    bf = beammap_flagmap.astype(int)  #as type due to legacy issues with flags being used as floats TODO @nswimmer FIX elsewhere and remove
+
+    h5map = np.zeros_like(bf)
+
+    #TODO vectorize
+    #convert each bit to the new bit
+    for i in range(bf.size):
+        ndxs = [FLAG_LIST.index('beammap.{}'.format(k)) for k,v in beammap.items() if v & bf[i]]
+        h5map.flat[i] = np.bitwise_or.reduce([FLAG_LIST_BITS[ndx] for ndx in ndxs])
+
+    return h5map
+
+
+def flag_bitmask(flag_names, flag_list=FLAG_LIST):
+    return np.bitwise_or.reduce([2 ** i for i, f in enumerate(flag_list) if f in flag_names])
+
+def to_flag_names(flag_group, bitmask):
+    return tuple(['{}.{}'.format(flag_group,k) for k, v in FLAG_LIST[flag_group] if v&bitmask])
+
+def problem_flag_bitmask(flag_list):
+    return flag_bitmask(PROBLEM_FLAGS, flag_list=flag_list)
 
 
 def valid(flag, error=False):

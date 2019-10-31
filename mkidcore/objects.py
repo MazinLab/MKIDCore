@@ -272,7 +272,7 @@ class Beammap(object):
             self.reassignmentList = a
 
         self.newResIDs = np.full_like(self.resIDs, np.nan)
-        self.newFlags = np.full_like(self.flags, np.nan)
+        self.newFlags = np.full_like(self.flags, np.nan)  #TODO This isn't valid flags are assumed to be ints
 
         for i in self.reassignmentList:
             if i[2] == 1:
