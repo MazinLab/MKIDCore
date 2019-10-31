@@ -64,24 +64,22 @@ PROBLEM_FLAGS = ('pixcal.hot', 'beammap.notone', )  # TODO finish or make flags 
 
 
 def beammap_flagmap_to_h5_flagmap(beammap_flagmap):
-    bf = beammap_flagmap.astype(int)  #as type due to legacy issues with flags being used as floats TODO @nswimmer FIX elsewhere and remove
-
+    bf = beammap_flagmap.astype(int)  # as type due to legacy issues with flags being used as floats TODO @nswimmer FIX elsewhere and remove
     h5map = np.zeros_like(bf)
-
     #TODO vectorize
-    #convert each bit to the new bit
-    for i in range(bf.size):
+    for i in range(bf.size):     # convert each bit to the new bit
         ndxs = [FLAG_LIST.index('beammap.{}'.format(k)) for k,v in beammap.items() if v & bf[i]]
         h5map.flat[i] = np.bitwise_or.reduce([FLAG_LIST_BITS[ndx] for ndx in ndxs])
-
     return h5map
 
 
 def flag_bitmask(flag_names, flag_list=FLAG_LIST):
     return np.bitwise_or.reduce([2 ** i for i, f in enumerate(flag_list) if f in flag_names])
 
+
 def to_flag_names(flag_group, bitmask):
     return tuple(['{}.{}'.format(flag_group,k) for k, v in FLAG_LIST[flag_group] if v&bitmask])
+
 
 def problem_flag_bitmask(flag_list):
     return flag_bitmask(PROBLEM_FLAGS, flag_list=flag_list)
