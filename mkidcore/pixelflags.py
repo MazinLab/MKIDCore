@@ -8,7 +8,18 @@ May update to use pytables Enums at some point down the road....
 """
 import numpy as np
 from mkidcore.corelog import getLogger
-wavecal = {'bad':1}
+# Wavelength cal. flags
+wavecal = {'bad': 1,  # The calibration failed. See other flags for details
+           'failed_validation': 2,  # The calibration failed the model-defined criteria for a good fit
+           'failed_convergence': 4,  # The calibration fit did not converge
+           'not_monotonic': 8,  # The wavelength histogram centers were not monotonic enough with respect to energy
+           'not_enough_histogram_fits': 16,  # Too few wavelength histograms had good fits to fit a calibration function
+           'not_attempted': 32,  # The calibration code was not run on this pixel
+           'no_histograms': 64,  # All of the wavelength histogram fits failed
+           'histogram_fit_problems': 128,  # Some of the wavelength histograms were not able to be fit
+           'linear': 256,  # The calibration is using a linear function
+           'quadratic': 512  # The calibration is using a quadratic function
+           }
 
 # Flat cal. flags:
 flatcal = {'inf_weight': 1,  # Spurious infinite weight was calculated - weight set to 1.0
@@ -50,8 +61,12 @@ FLAG_DICTS = {'wavecal': wavecal, 'flatcal': flatcal, 'speccal': speccal, 'wcsca
 FLAG_LIST = tuple(['{}.{}'.format(k, v) for k in FLAG_DICTS for v in FLAG_DICTS[k]])
 FLAG_LIST_BITS = tuple([2**i for i in range(len(FLAG_LIST))])
 
-PROBLEM_FLAGS = ('pixcal.hot', 'beammap.notone', )  # TODO finish or make flags objects and build programatically
-
+PROBLEM_FLAGS = ('pixcal.hot', 'beammap.notone', 'wavecal.bad', 'wavecal.failed_validation',
+                 'wavecal.failed_convergence', 'wavecal.not_monotonic', 'wavecal.not_enough_histogram_fits',
+                 'wavecal.no_histograms', 'wavecal.not_attempted')  # TODO finish or make flags objects and build programatically
+# flags for indicating something may be up with the wavecal
+# linear fits are only questionable if they are the fallback fit type
+WAVECAL_QUESTIONABLE_FLAGS = ('wavecal.histogram_fit_problems', 'wavecal.linear')
 
 def beammap_flagmap_to_h5_flagmap(beammap_flagmap):
     bf = beammap_flagmap.astype(int)  # as type due to legacy issues with flags being used as floats TODO @nswimmer FIX elsewhere and remove
