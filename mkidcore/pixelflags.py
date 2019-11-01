@@ -58,8 +58,8 @@ def beammap_flagmap_to_h5_flagmap(beammap_flagmap):
     h5map = np.zeros_like(bf)
     #TODO vectorize
     for i in range(bf.size):     # convert each bit to the new bit
-        ndxs = [FLAG_LIST.index('beammap.{}'.format(k)) for k,v in beammap.items() if v & bf[i]]
-        h5map.flat[i] = np.bitwise_or.reduce([FLAG_LIST_BITS[ndx] for ndx in ndxs])
+        ndxs = [FLAG_LIST.index('beammap.{}'.format(k)) for k, v in beammap.items() if v == bf.flat[i]]
+        h5map.flat[i] = np.bitwise_or.reduce([2**ndx for ndx in ndxs]) if ndxs else 0
     return h5map
 
 
