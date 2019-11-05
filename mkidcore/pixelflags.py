@@ -23,7 +23,7 @@ wavecal = {'bad': 1,  # The calibration failed. See other flags for details
 
 # Flat cal. flags:
 flatcal = {'inf_weight': 1,  # Spurious infinite weight was calculated - weight set to 1.0
-           'zero_eight': 2,  # Spurious zero weight was calculated - weight set to 1.0
+           'zero_weight': 2,  # Spurious zero weight was calculated - weight set to 1.0
            'below_range': 4,  # Derived wavelength is below formal validity range of calibration
            'above_range': 8,  # Derived wavelength is above formal validity range of calibration
            }
