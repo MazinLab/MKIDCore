@@ -83,7 +83,7 @@ def flag_bitmask(flag_names, flag_list=FLAG_LIST):
 
 
 def to_flag_names(flag_group, bitmask):
-    return tuple(['{}.{}'.format(flag_group,k) for k, v in FLAG_DICTS[flag_group] if v&bitmask])
+    return tuple(['{}.{}'.format(flag_group,k) for k, v in FLAG_DICTS[flag_group].items() if v&bitmask])
 
 
 def problem_flag_bitmask(flag_list):
