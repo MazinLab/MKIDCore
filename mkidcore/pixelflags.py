@@ -79,7 +79,7 @@ def beammap_flagmap_to_h5_flagmap(beammap_flagmap):
 
 
 def flag_bitmask(flag_names, flag_list=FLAG_LIST):
-    return np.bitwise_or.reduce([2 ** i for i, f in enumerate(flag_list) if f in flag_names])
+    return np.bitwise_or.reduce([2 ** i for i, f in enumerate(flag_list) if f in flag_names]) if flag_names else 0
 
 
 def to_flag_names(flag_group, bitmask):
