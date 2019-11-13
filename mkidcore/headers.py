@@ -103,6 +103,7 @@ class ObsHeader(IsDescription):
     dataDir = StringCol(255)
     beammapFile = StringCol(255)
     isWvlCalibrated = BoolCol()
+    isHotPixMasked = BoolCol()
     isFlatCalibrated = BoolCol()
     isSpecCalibrated = BoolCol()
     isLinearityCorrected = BoolCol()
