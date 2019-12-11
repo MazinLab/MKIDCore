@@ -562,7 +562,7 @@ def load(file, namespace=None):
                  ret.update('roaches', yaml.load(f))
         except KeyError:
             pass
-
+        return ret
     elif namespace is None:
         raise ValueError('Namespace required when loading an old config')
     else:
