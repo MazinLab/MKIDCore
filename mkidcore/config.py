@@ -493,7 +493,6 @@ def _consolidateconfig(cd):
 yaml.register_class(ConfigThing)
 
 
-
 # def _include_constructor(self, node):
 #     print(node)
 #     if isinstance(node, ruamel.yaml.ScalarNode):
@@ -558,10 +557,12 @@ def load(file, namespace=None):
     if file.lower().endswith(('yaml', 'yml')):
         with open(file, 'r') as f:
             ret = yaml.load(f)
-        if 'roaches' in ret: #This is a horribly, dastardly dirty hack
-            with open(ret.roaches.value, 'r') as f:
-                ret.update('roaches', yaml.load(f))
-        return ret
+        try:
+             with open(ret.roaches.value, 'r') as f:
+                 ret.update('roaches', yaml.load(f))
+        except KeyError:
+            pass
+
     elif namespace is None:
         raise ValueError('Namespace required when loading an old config')
     else:
