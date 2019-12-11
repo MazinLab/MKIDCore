@@ -132,8 +132,15 @@ class Beammap(object):
             psData = np.concatenate((psData, np.loadtxt(sweep)))
         self.frequencies = np.full(self.resIDs.shape, np.nan)
         # psData has the form [Resonator ID, Frequency (Hz), Attenuation (dB)]
-        for rID, freq, _ in psData:
-            self.frequencies[self.resIDs == rID] = freq / (10 ** 6)
+        # TODO: move SweepMetadata to core and use that instead
+        if psData.shape[1] == 3:
+            for rID, freq, _ in psData:
+                self.frequencies[self.resIDs == rID] = freq / (10 ** 6)
+        elif psData.shape[1] == 9:
+            for rID, _, _, _, _, freq, atten, _, _ in psData:
+                self.frequencies[self.resIDs == rID] = freq / (10 ** 6)
+        else:
+            raise Exception('Freq file format not supported')
 
     def save(self, filename, forceIntegerCoords=False):
         """
