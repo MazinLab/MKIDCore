@@ -560,7 +560,7 @@ def load(file, namespace=None):
         try:
              with open(ret.roaches.value, 'r') as f:
                  ret.update('roaches', yaml.load(f))
-        except KeyError:
+        except (KeyError, AttributeError):
             pass
         return ret
     elif namespace is None:
