@@ -43,7 +43,8 @@ pixcal = {'hot': 1,  # Hot pixel
           }
 
 # Beammap flags (stored in beammap file)   #If these aren't bit flags then the & eeds to be converted to an ==
-beammap = {'noDacTone':1,      #Pixel not read out
+beammap = {     'good':0,
+                'noDacTone':1,      #Pixel not read out
                 'failed':2,         #Beammap failed to place pixel
                 'yFailed':3,        #Beammap succeeded in x, failed in y
                 'xFailed':4,        #Beammap succeeded in y, failed in x
