@@ -97,18 +97,31 @@ def CONEX2PIXEL(xCon, yCon):
     return [xPos, yPos]
 
 
-def compute_wcs_ref_pixel(positions, center=(0, 0), target_center_at_ref=(0, 0), instrument='mec'):
-    """ A function to convert the connex offset to pixel displacement
-    :param positions: conext position(s)
-    :param center: conex center position
-    :param target_center_at_ref: pixel position of conex center
-    :param instrument: the instrument
-    :return: The reference pixel 
+def compute_wcs_ref_pixel(position, center=(0, 0), target_center_at_ref=(0, 0), instrument='mec'):
+    """
+    A function to convert the connex offset to pixel displacement
+
+    Params
+    ------
+    position : tuple, CommentedSeq
+        conex position for dither. Conex units i.e. -3<x<3
+    center : tuple, CommentedSeq
+        Origin of conex grid. Conex units i.e. -3<x<3. Typically (0, 0)
+    target_center_at_ref : tuple, CommentedSeq
+        Center of rotation of dithers in pixel coordinate of the Canvas grid center. Derotated images will be smeared
+        if this is off. drizzler.get_star_offset() can be used to calibrate this.
+    instrument : str
+        the MKID instrument
+
+    Returns
+    -------
+    The reference pixel for Canvas grid relative to its center
+
     """
     if instrument.lower() != 'mec':
         raise NotImplementedError('MEC is only supported instrument.')
-    positions = np.asarray(positions)
-    pix = np.asarray(CONEX2PIXEL(positions[0], positions[1])) - np.array(CONEX2PIXEL(*center))
+    position = np.asarray(position)  # asarray converts CommentedSeq type to ndarray
+    pix = np.asarray(CONEX2PIXEL(position[0], position[1])) - np.array(CONEX2PIXEL(*center))
     pix += np.asarray(target_center_at_ref).reshape(2)
     return pix[::-1]
 
