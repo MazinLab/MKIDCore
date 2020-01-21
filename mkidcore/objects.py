@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from mkidcore.instruments import DEFAULT_ARRAY_SIZES
 from glob import glob
@@ -9,6 +10,86 @@ from mkidreadout.configuration.beammap.flags import beamMapFlags
 
 from datetime import datetime
 import json
+
+
+class TimeStream(object):
+    """
+    Class for holding a resonator's phase time-stream.
+
+    Args:
+        file_path: string
+            The file name containing the phase time-stream.
+        phase: numpy.ndarray (optional)
+            The phase data to use if 'file_path' doesn't exist yet.
+        name: any (optional)
+            An object that can be used to identify the time stream. It is not
+            used directly by this class.
+    """
+    yaml_tag = u'!ts'
+
+    def __init__(self, file_path, phase=None, name=None):
+        self.file_path = file_path
+        self.name = name if name is not None else os.path.splitext(os.path.basename(file_path))[0]
+
+        # defer loading data
+        self.zip = None
+        self.phase = phase
+
+    @property
+    def phase(self):
+        """The phase time-stream of the resonator."""
+        if self._phase is None:
+            self._phase = self.zip[self.zip.keys()[0]]
+        return self._phase
+
+    @phase.setter
+    def phase(self, value):
+        self._phase = value
+
+    @property
+    def zip(self):
+        """A dictionary-like object which lazily loads data from a file."""
+        if self._npz is None:
+            self._npz = np.load(self.file_path)
+        return self._npz
+
+    @zip.setter
+    def zip(self, value):
+        self._npz = value
+
+    def clear(self):
+        """Free memory by removing all file bound attributes."""
+        self.phase = None
+        self.zip = None
+
+    def save(self):
+        """Save the time-stream data to the object's file path."""
+        try:
+            np.savez(self.file_path, self.phase)
+        except IOError:
+            path = self.file_path.rsplit('/', 1)
+            if len(path) <= 1:
+                raise
+            getLogger(__name__).info('Making directory: ' + path[0])
+            os.mkdir(path[0])
+            np.savez(self.file_path, self.phase)
+
+    @classmethod
+    def to_yaml(cls, representer, node):
+        return representer.represent_mapping(cls.yaml_tag, dict(file=node.file, name=node.name))
+
+    @classmethod
+    def from_yaml(cls, constructor, node):
+        d = dict(constructor.construct_pairs(node))
+        file_path = d.pop("file")
+        directory = d.pop("directory", None)
+        if directory is not None:
+            file_path = os.path.join(directory, os.path.basename(file_path))
+        ts = cls(file_path, **d)
+        return ts
+
+
+mkidcore.config.yaml.register_class(TimeStream)
 
 
 class DashboardState(dict):
