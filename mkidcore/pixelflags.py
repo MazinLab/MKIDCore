@@ -8,6 +8,19 @@ May update to use pytables Enums at some point down the road....
 """
 import numpy as np
 from mkidcore.corelog import getLogger
+# Flags for the optimal filter routine
+filters = {'not_started': 0,  # calculation has not been started.
+           'pulses_computed': 1,  # finished finding the pulses.
+           'noise_computed': 2,  # finished the noise calculation.
+           'template_computed': 4,  # finished the template calculation.
+           'filter_computed': 8,  # finished the filter calculation.
+           'bad_pulses': 16,  # not enough pulses found satisfying the configuration conditions.
+           'bad_noise': 32,  # noise calculation failed. Assuming white noise.
+           'bad_template': 64,  # template calculation failed. Using the fallback template.
+           'bad_template_fit': 128,  # the template fit failed. Using the raw data.
+           'bad_filter': 256}  # filter calculation failed. Using the template as a filter.
+
+
 # Wavelength cal. flags
 wavecal = {'bad': 1,  # The calibration failed. See other flags for details
            'failed_validation': 2,  # The calibration failed the model-defined criteria for a good fit

@@ -2,6 +2,7 @@ import re
 from mkidcore.corelog import getLogger
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 
 MEC_FEEDLINE_INFO = dict(num=10, width=14, length=146)
 DARKNESS_FEEDLINE_INFO = dict(num=5, width=25, length=80)
@@ -41,81 +42,86 @@ for k in list(ROACHESB):
 
 
 def CONEX2PIXEL(xCon, yCon):
-    """ Emprically determined """
+    """ Emprically determined from a white light dither done over thw whole array on 12/13/19"""
     # from scipy.optimize import curve_fit
-    # xCon0 = -0.035
-    # xCon1 = 0.23
-    # xCon2 = 0.495
+
+    # psf_centers = [[65.0, 68.0],[77.0, 106.0],[89.0, 106.0],[42.0, 108.0],[42.0, 115.0], [124.0, 82.0],[101.0, 122.0],
+    #                [66.0, 92.0],[55.0, 107.0],[137.0, 74.0],[34.0, 100.0],[32.0, 94.0],[38.0, 62.0],[54.0, 61.0],
+    #                [123.0, 112.0],[123.0, 67.0],[114.0, 91.0],[33.0, 77.0],[90.0, 74.0],[124.0, 104.0],[136.0, 105.0],
+    #                [80.0, 82.0],[79.0, 113.0],[114.0, 82.0],[122.0, 61.0],[123.0, 76.0],[33.0, 84.0],[113.0, 75.0],
+    #                [80.0, 66.0],[32.0, 108.0],[89.0, 114.0],[123.0, 129.0],[53.0, 131.0],[76.0, 132.0],[32.0, 131.0],
+    #                [49.0, 61.0],[88.0, 122.0],[137.0, 65.0],[101.0, 107.0],[114.0, 60.0],[66.0, 75.0],[122.0, 121.0],
+    #                [80.0, 99.0],[114.0, 106.0],[65.0, 100.0],[42.0, 123.0],[135.0, 129.0],[53.0, 91.0],[64.0, 106.0],
+    #                [136.0, 114.0],[112.0, 121.0],[134.0, 120.0]]
     #
-    # yCon0 = -0.76
-    # yCon1 = -0.38
-    # yCon2 = 0.0
-    # yCon3 = 0.38
+    # dither_pos = [[0.327, -0.25],[-0.283, -0.083],[-0.283, 0.083],[-0.283, -0.583],[-0.406, -0.584],[0.083, 0.583],
+    #               [-0.528, 0.25],[-0.039, -0.25], [-0.283, -0.417],[0.206, 0.75],[-0.161, -0.75],[-0.039, -0.75],
+    #               [0.45, -0.75], [0.45, -0.417], [-0.406, 0.583],[0.328, 0.583],[-0.039, 0.416], [0.205, -0.75],
+    #               [0.205, 0.083], [-0.283, 0.583], [-0.283, 0.75], [0.083, -0.084],[-0.406, -0.084], [0.083, 0.417],
+    #               [0.45, 0.583], [0.206, 0.583],[0.083, -0.75], [0.205, 0.417], [0.328, -0.084], [-0.284, -0.75],
+    #               [-0.405, 0.083], [-0.65, 0.583], [-0.65, -0.417], [-0.65, -0.083], [-0.65, -0.75], [0.45, -0.583],
+    #               [-0.528, 0.083], [0.328, 0.75], [-0.283, 0.25], [0.45, 0.417], [0.205, -0.25], [-0.528, 0.583],
+    #               [-0.161, -0.084], [-0.283, 0.417], [-0.161, -0.25], [-0.528, -0.583], [-0.65, 0.75], [-0.039, -0.417],
+    #               [-0.283, -0.25], [-0.406, 0.75], [-0.528, 0.416],[-0.528, 0.75]]
     #
-    # xPos0array = np.array([125.46351537124369, 124.79156638384541])
-    # xPos1array = np.array([107.98640545380867, 106.53992257621843, 106.04177093203712])
-    # xPos2array = np.array([93.809781273378277, 93.586178673966316, 91.514837557492427, 89.872003744327927])
+    # xPosFit = np.zeros(len(psf_centers))
+    # yPosFit = np.zeros(len(psf_centers))
     #
-    # yPos0array = np.array([36.537397207881689])
-    # yPos1array = np.array([61.297923464154792, 61.535802615842933, 61.223871938056725])
-    # yPos2array = np.array([88.127237564834743, 90.773675516601259, 90.851982786156569])
-    # yPos3array = np.array([114.66071882865981, 115.42948957872515])
+    # for i, pos in enumerate(psf_centers):
+    #     xPosFit[i] = pos[1]
+    #     yPosFit[i] = pos[0]
     #
-    # xPos0 = np.median(xPos0array)
-    # xPos1 = np.median(xPos1array)
-    # xPos2 = np.median(xPos2array)
+    # xConFit = np.zeros(len(dither_pos))
+    # yConFit = np.zeros(len(dither_pos))
     #
-    # yPos0 = np.median(yPos0array)
-    # yPos1 = np.median(yPos1array)
-    # yPos2 = np.median(yPos2array)
-    # yPos3 = np.median(yPos3array)
-    #
-    # xPos0err = np.std(xPos0array)
-    # xPos1err = np.std(xPos1array)
-    # xPos2err = np.std(xPos2array)
-    #
-    # yPos0err = np.std(yPos0array)
-    # yPos1err = np.std(yPos1array)
-    # yPos2err = np.std(yPos2array)
-    # yPos3err = np.std(yPos3array)
-    #
-    # xConFit = np.array([xCon0, xCon1, xCon2])
-    # xPosFit = np.array([xPos0, xPos1, xPos2])
-    # xPoserrFit = np.array([xPos0err, xPos1err, xPos2err])
-    #
-    # yConFit = np.array([yCon0, yCon1, yCon2, yCon3])
-    # yPosFit = np.array([yPos0, yPos1, yPos2, yPos3])
-    # yPoserrFit = np.array([np.sqrt(yPos0array[0]), yPos1err, yPos2err, yPos3err])
+    # for i, pos in enumerate(dither_pos):
+    #     xConFit[i] = pos[0]
+    #     yConFit[i] = pos[1]
+
 
     def func(x, slope, intercept):
         return x * slope + intercept
-
-    # xopt, xcov = curve_fit(func, xConFit, xPosFit, sigma=xPoserrFit)
-    # yopt, ycov = curve_fit(func, yConFit, yPosFit, sigma=yPoserrFit)
-
-    xopt = np.array([-65.43754816, 122.74171408])
-    yopt = np.array([70.84760994, 88.23558729])
+    # 
+    #
+    # xopt, xcov = curve_fit(func, xConFit, xPosFit)
+    # yopt, ycov = curve_fit(func, yConFit, yPosFit)
 
     def con2Pix(xCon, yCon, func):
         return [func(xCon, *xopt), func(yCon, *yopt)]
+
+    xopt = [-63.36778615, 88.47319224]
+    yopt = [68.5940592, 83.7997898]
 
     xPos, yPos = con2Pix(xCon, yCon, func)
 
     return [xPos, yPos]
 
 
-def compute_wcs_ref_pixel(positions, center=(0, 0), target_center_at_ref=(0, 0), instrument='mec'):
-    """ A function to convert the connex offset to pixel displacement
-    :param positions: conext position(s)
-    :param center: conex center position
-    :param target_center_at_ref: pixel position of conex center
-    :param instrument: the instrument
-    :return: The reference pixel 
+def compute_wcs_ref_pixel(position, center=(0, 0), target_center_at_ref=(0, 0), instrument='mec'):
+    """
+    A function to convert the connex offset to pixel displacement
+
+    Params
+    ------
+    position : tuple, CommentedSeq
+        conex position for dither. Conex units i.e. -3<x<3
+    center : tuple, CommentedSeq
+        Origin of conex grid. Conex units i.e. -3<x<3. Typically (0, 0)
+    target_center_at_ref : tuple, CommentedSeq
+        Center of rotation of dithers in pixel coordinate of the Canvas grid center. Derotated images will be smeared
+        if this is off. drizzler.get_star_offset() can be used to calibrate this.
+    instrument : str
+        the MKID instrument
+
+    Returns
+    -------
+    The reference pixel for Canvas grid relative to its center
+
     """
     if instrument.lower() != 'mec':
         raise NotImplementedError('MEC is only supported instrument.')
-    positions = np.asarray(positions)
-    pix = np.asarray(CONEX2PIXEL(positions[0], positions[1])) - np.array(CONEX2PIXEL(*center))
+    position = np.asarray(position)  # asarray converts CommentedSeq type to ndarray
+    pix = np.asarray(CONEX2PIXEL(position[0], position[1])) - np.array(CONEX2PIXEL(*center))
     pix += np.asarray(target_center_at_ref).reshape(2)
     return pix[::-1]
 
