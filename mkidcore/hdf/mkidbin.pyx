@@ -1,7 +1,7 @@
 """
 When updating this code:
 You must also recompile the setup.py file located in the current directory
-which containes the information to make(compile) the cythonized file.
+which contains the information to make(compile) the cythonized file.
 (in current repository, in .../MKIDPipeline dir)
 $ python setup.py build_ext --inplace
 """
@@ -10,9 +10,10 @@ cimport numpy as np
 import os
 from mkidcore.corelog import getLogger
 from mkidcore.headers import PhotonNumpyType as np_photon
+from mkidcore.headers import PhotonNumpyTypeBin as np_photon_bin
 
 PHOTON_BIN_SIZE_BYTES = 8
-PHOTON_SIZE_BYTES = 5*4
+PHOTON_SIZE_BYTES = 6*4
 
 
 cdef extern from "binprocessor.h":
@@ -26,19 +27,26 @@ cdef extern from "binprocessor.h":
 
 
 
-def extract(directory, start, inttime, beamfile, x, y):
+def extract(directory, start, inttime, beamfile, x, y, subtract_baseline=True):
     files = [os.path.join(directory, '{}.bin'.format(t)) for t in range(start-1, start+inttime+1)]
     files = filter(os.path.exists, files)
     n_max_photons = int(np.ceil(sum([os.stat(f).st_size for f in files])/PHOTON_BIN_SIZE_BYTES))
     getLogger(__name__).debug('Calling C to extract ~{:g} photons, will require ~{:.1f}GB of RAM'.format(n_max_photons,
                                                                                    n_max_photons*PHOTON_SIZE_BYTES/1024/1024/1024))
-    photons = np.zeros(n_max_photons, dtype=np_photon)
+    photons = np.zeros(n_max_photons, dtype=np_photon_bin)
     photons = np.ascontiguousarray(photons)
     nphotons = extract_photons(directory.encode('UTF-8'), start, inttime, beamfile.encode('UTF-8'), x, y,
                                n_max_photons, <photon*> np.PyArray_DATA(photons))
     getLogger(__name__).debug('C code returned {} photons'.format(nphotons))
     photons = photons[:nphotons]
-    return photons
+
+    photons2 = np.zeros(nphotons, dtype=np_photon)
+    photons2['Wavelength'] = photons['wvl'] + photons['baseline'] if subtract_baseline else photons['wvl']
+    photons2['ResID'] = photons['resID']
+    photons2['Time'] = photons['timestamp']
+    photons2['SpecWeight'] = photons['wSpec']
+    photons2['NoiseWeight'] = photons['wNoise']
+    return photons2
 
 
 def extract_fake(nphotons, start=1547683242, intt=150, nres=20000):
@@ -48,6 +56,7 @@ def extract_fake(nphotons, start=1547683242, intt=150, nres=20000):
     photons['wvl'] = np.random.random(nphotons)
     photons['wSpec'] = np.random.random(nphotons)
     photons['wNoise'] = np.random.random(nphotons)
+    photons['baseline'] = np.random.random(nphotons)
     return photons
 
 
@@ -64,6 +73,7 @@ def test(nphot=10):
     photons['wvl'] = np.ones(nphot)
     photons['wSpec'] = np.ones(nphot)*2
     photons['wNoise'] = np.ones(nphot)*3
+    photons['baseline'] = np.ones(nphot)*4
 
     ret = extract_photons_dummy('/a/test/dir/'.encode('UTF-8'), 123456789, 54321, '/a/test/beammap'.encode('UTF-8'),
                                 111, 222, nphot, <photon*> np.PyArray_DATA(photons))
@@ -75,13 +85,11 @@ def test(nphot=10):
 def parse(file,_n=0):
     """
     Created by KD and JB Sept 2018
-
     This cython function will take an input .bin file and send it to be parsed to
     with a .c file and return the data as a python struct. The parsing is
     done in a program binprocessor.c/binprocessor.h
     The parsed data has the full timestamp created from adding the header and
     data packet timestamps in the .bin files.
-
     The input .bin file to the function contains both header packets and
     "fake photon" data, which is a photon created by the firmware to end an
     ethernet frame. The firmware is set to end a fframe either when there are
@@ -90,10 +98,8 @@ def parse(file,_n=0):
     fake photons are not removed in the binlib.c code (they could be. We remove
     them here in the cython file. We have to create a new array, even though it is memory
     intensive, because you cannot change a numpy array's shape (easily).
-
     File is called by:
     p = mkidbin.parse("fname.bin",n)
-
     Returns
     p.base = baseline
     p.phase = phase
@@ -105,7 +111,7 @@ def parse(file,_n=0):
 
     # Creating pointers to memory bocks that the binlib.c code will fill
     n = int(max(os.stat(file).st_size/8, _n))
-    baseline   = np.empty(n, dtype=np.int)
+    baseline   = np.empty(n, dtype=np.float32)
     wavelength = np.empty(n, dtype=np.float32)
     timestamp  = np.empty(n, dtype=np.uint64)
     y = np.empty(n, dtype=np.uint32)
@@ -147,3 +153,4 @@ def parse(file,_n=0):
     ret = p[p.x != 511]
 
     return ret
+

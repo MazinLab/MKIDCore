@@ -42,7 +42,10 @@ for k in list(ROACHESB):
 
 
 def CONEX2PIXEL(xCon, yCon):
-    """ Emprically determined from a white light dither done over thw whole array on 12/13/19"""
+    """
+    Emprically determined from a white light dither done over the whole array on 12/13/19
+    -Sarah Steiger
+    """
     # from scipy.optimize import curve_fit
 
     # psf_centers = [[65.0, 68.0],[77.0, 106.0],[89.0, 106.0],[42.0, 108.0],[42.0, 115.0], [124.0, 82.0],[101.0, 122.0],

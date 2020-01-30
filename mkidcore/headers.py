@@ -167,7 +167,9 @@ PhotonNumpyTypeBin = np.dtype([('resID', np.uint32),
                                ('timestamp', np.uint32),
                                ('wvl', np.float32),
                                ('wSpec', np.float32),
-                               ('wNoise', np.float32)], align=True)
+                               ('wNoise', np.float32),
+                               ('baseline', np.float32)
+                               ], align=True)
 
 # PhotonNumpyType and PhotonCType are based on what we get back from an H5 file (based on ObsFileCols)
 PhotonNumpyType = np.dtype([('ResID', np.uint32),

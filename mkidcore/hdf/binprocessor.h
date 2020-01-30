@@ -4,6 +4,7 @@ typedef struct photon {
     float wvl;
     float wSpec;
     float wNoise;
+    float baseline;
 } photon;
 
 long extract_photons(const char *dname, unsigned long start, unsigned long inttime,

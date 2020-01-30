@@ -174,6 +174,7 @@ void ParseToMem(char *packet, uint64_t l, int tsOffs, int FirstFile, int iFile, 
 		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].wvl = ((float) data->wvl)*RAD2DEG/32768.0;
 		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].wSpec = 1.0;
 		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].wNoise = 1.0;
+		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].baseline = ((float) data->baseline)*RAD2DEG/16384.0;
 		ptablect[data->xcoord][data->ycoord]++;
     }
 
@@ -544,7 +545,7 @@ long cparsebin(const char *fName, unsigned long max_len,
 		else {                              // must be data. Save as photondata struct
 		    out_i = pcount >= max_len ? max_len: pcount;
 			photondata = (struct datapacket *) (&swp1);
-			baseline[out_i] = photondata->baseline;
+			baseline[out_i] = ((float) photondata->baseline)*RAD2DEG/16384.0;
 			wavelength[out_i] = ((float) photondata->wvl)*RAD2DEG/32768.0;
 			timestamp[out_i] = photondata->timestamp + curtime; // units are microseconds elapsed from beginning of year.
 			ycoord[out_i] = photondata->ycoord;
