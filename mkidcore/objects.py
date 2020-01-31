@@ -6,7 +6,7 @@ import pkg_resources as pkg
 import mkidcore.config
 from mkidcore.corelog import getLogger
 import copy
-from mkidreadout.configuration.beammap.flags import beamMapFlags
+from mkidcore.pixelflags import beammap as beamMapFlags
 
 from datetime import datetime
 import json
