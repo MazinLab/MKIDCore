@@ -26,8 +26,7 @@ cdef extern from "binprocessor.h":
                    unsigned long* timestamp, unsigned int* ycoord, unsigned int* xcoord, unsigned int* roach)
 
 
-
-def extract(directory, start, inttime, beamfile, x, y, subtract_baseline=True):
+def extract(directory, start, inttime, beamfile, x, y, include_baseline=False):
     files = [os.path.join(directory, '{}.bin'.format(t)) for t in range(start-1, start+inttime+1)]
     files = filter(os.path.exists, files)
     n_max_photons = int(np.ceil(sum([os.stat(f).st_size for f in files])/PHOTON_BIN_SIZE_BYTES))
@@ -41,7 +40,7 @@ def extract(directory, start, inttime, beamfile, x, y, subtract_baseline=True):
     photons = photons[:nphotons]
 
     photons2 = np.zeros(nphotons, dtype=np_photon)
-    photons2['Wavelength'] = photons['wvl'] + photons['baseline'] if subtract_baseline else photons['wvl']
+    photons2['Wavelength'] = photons['wvl'] + photons['baseline'] if not include_baseline else photons['wvl']
     photons2['ResID'] = photons['resID']
     photons2['Time'] = photons['timestamp']
     photons2['SpecWeight'] = photons['wSpec']
