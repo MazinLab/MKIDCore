@@ -39,8 +39,11 @@ def extract(directory, start, inttime, beamfile, x, y, include_baseline=False):
     getLogger(__name__).debug('C code returned {} photons'.format(nphotons))
     photons = photons[:nphotons]
 
+    baselines = photons['baseline']
+    baseline_median = np.median(baselines)
+    print('BL median is ' + str(baseline_median))
     photons2 = np.zeros(nphotons, dtype=np_photon)
-    photons2['Wavelength'] = photons['wvl'] + photons['baseline'] if not include_baseline else photons['wvl']
+    photons2['Wavelength'] = (photons['wvl'] + photons['baseline']) - baseline_median if not include_baseline else photons['wvl']
     photons2['ResID'] = photons['resID']
     photons2['Time'] = photons['timestamp']
     photons2['SpecWeight'] = photons['wSpec']
