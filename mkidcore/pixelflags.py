@@ -75,7 +75,7 @@ FLAG_DICTS = {'wavecal': wavecal, 'flatcal': flatcal, 'speccal': speccal, 'wcsca
 FLAG_LIST = tuple(['{}.{}'.format(k, v) for k in FLAG_DICTS for v in FLAG_DICTS[k]])
 FLAG_LIST_BITS = tuple([2**i for i in range(len(FLAG_LIST))])
 
-PROBLEM_FLAGS = ('pixcal.hot', 'beammap.noDacTone', 'wavecal.bad', 'wavecal.failed_validation',
+PROBLEM_FLAGS = ('pixcal.hot', 'pixcal.cold', 'beammap.noDacTone', 'wavecal.bad', 'wavecal.failed_validation',
                  'wavecal.failed_convergence', 'wavecal.not_monotonic', 'wavecal.not_enough_histogram_fits',
                  'wavecal.no_histograms', 'wavecal.not_attempted')  # TODO finish or make flags objects and build programatically
 # flags for indicating something may be up with the wavecal
