@@ -105,7 +105,7 @@ class ObsHeader(IsDescription):
     isWvlCalibrated = BoolCol()
     isBadPixMasked = BoolCol()
     isFlatCalibrated = BoolCol()
-    isSpecCalibrated = BoolCol()
+    isFluxCalibrated = BoolCol()
     isLinearityCorrected = BoolCol()
     isPhaseNoiseCorrected = BoolCol()
     isPhotonTailCorrected = BoolCol()
