@@ -16,29 +16,15 @@ mkidbin_extension = Extension(
 )
 
 
-def compile_and_install_software():
-    """Used the subprocess module to compile/install the C software."""
-    src_path = './mkidcore/hdf/'
-    try:
-        subprocess.check_call('/usr/local/hdf5/bin/h5cc -shlib -pthread -O3 -o bin2hdf bin2hdf.c',
-                              cwd=src_path, shell=True)
-
-    except Exception as e:
-        print(str(e))
-        #raise e don't raise because on some machines h5cc might not exist.
-
-
 class CustomInstall(install, object):
     """Custom handler for the 'install' command."""
     def run(self):
-        compile_and_install_software()
         super(CustomInstall,self).run()
 
 
 class CustomDevelop(develop, object):
     """Custom handler for the 'install' command."""
     def run(self):
-        compile_and_install_software()
         super(CustomDevelop,self).run()
 
 with open("README.md", "r") as fh:
