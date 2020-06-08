@@ -22,8 +22,8 @@ cdef extern from "binprocessor.h":
                          unsigned int x, unsigned int y,unsigned long n_max_photons, photon* photons)
     long extract_photons_dummy(const char *dname, unsigned long start, unsigned long inttime, const char *bmap,
                                unsigned int x, unsigned int y, unsigned long n_max_photons, photon* photons)
-    long cparsebin(const char *fName, unsigned long max_len, int* baseline, float* wavelength,
-                   unsigned long* timestamp, unsigned int* ycoord, unsigned int* xcoord, unsigned int* roach)
+    long cparsebin(const char *fName, unsigned long max_len, float* baseline, float* wavelength,
+                   unsigned long long* timestamp, unsigned int* ycoord, unsigned int* xcoord, unsigned int* roach)
 
 
 def extract(directory, start, inttime, beamfile, x, y, include_baseline=False):
@@ -123,9 +123,9 @@ def parse(file,_n=0):
     # Calling parsebin from binlib.c
     # npackets is the number of real+fake photons processed by binlib.c
     npackets = cparsebin(file.encode('UTF-8'), n,
-                 <int*>np.PyArray_DATA(baseline),
+                 <float*>np.PyArray_DATA(baseline),
                  <float*>np.PyArray_DATA(wavelength),
-                 <unsigned long*>np.PyArray_DATA(timestamp),
+                 <unsigned long long*>np.PyArray_DATA(timestamp),
                  <unsigned int*>np.PyArray_DATA(y),
                  <unsigned int*>np.PyArray_DATA(x),
                  <unsigned int*>np.PyArray_DATA(roachnum))
@@ -142,7 +142,7 @@ def parse(file,_n=0):
     # This essentially clips the data since we declared it to be as long as the .bin
     #  file, but some of those lines were headers, which are now empty in the returned arrays
     #  We also combine the arrays into a single struct. It's a for loop, but its actually a fast one
-    dt  = np.dtype([('baseline', int),('phase', float), ('tstamp', np.float64),('y', int), ('x', int),('roach', int)])
+    dt  = np.dtype([('baseline', float),('phase', float), ('tstamp', np.uint64),('y', int), ('x', int),('roach', int)])
     cdef p = np.zeros(npackets,dtype=dt)
     for name, x in zip(dt.names, [baseline[:npackets],wavelength[:npackets],
                                   timestamp[:npackets],y[:npackets],x[:npackets],roachnum[:npackets]]):
