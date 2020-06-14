@@ -12,7 +12,7 @@ FEEDLINE_INFO = {'mec': MEC_FEEDLINE_INFO, 'darkness':DARKNESS_FEEDLINE_INFO}
 DEFAULT_ARRAY_SIZES = {'mec': (140, 146), 'darkness': (80, 125)}
 
 
-MEC_NUM_FL_MAP = {228: '1a', 229: '1b', 220: '5a', 221: '5b', 238: '6a',239: '6b', 
+MEC_NUM_FL_MAP = {228: '1a', 229: '1b', 238: '5a', 239: '5b', 220: '6a', 221: '6b', 
                   222: '7a', 223: '7b', 232: '8a', 233: '8b', 
                   236: '9a', 237: '9b', 224: '10a', 225: '10b'}
 
