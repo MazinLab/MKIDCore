@@ -235,7 +235,7 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
     closedir(dir);
 
     // check nFiles
-    printf("nFiles = %d\n", nFiles);
+    printf("nFiles = %d\n", nFiles); fflush(stdout);
     if(nFiles < 1 || nFiles > 1800) return -1; // limiting number of files to 30 minutes
 
 
@@ -281,7 +281,6 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
 
     printf("Allocated ptable.\n"); fflush(stdout);
 
-    printf("\nParsed beam map.\n"); fflush(stdout);
 
     // Read in beam map and parse it make 2D beam map and flag arrays
     InitializeBeamMap(BeamMap, beamMapInitVal, beamCols, beamRows); //initialize to out of bounds resID
@@ -313,6 +312,7 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
         }
     }
 
+    printf("\nParsed beam map.\n"); fflush(stdout);
 	printf("Made individual photon data tables.\n"); fflush(stdout);
 
     // Loop through the data files and parse the packets into separate data tables
@@ -378,11 +378,15 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
     olddiff = diff;
 
     printf("Read and parsed data in memory in %f s.\n",(float)diff/CLOCKS_PER_SEC);  fflush(stdout);
+    printf("BM0 %d\n", BeamMap[0][0]);
 
     nPhot=0;
     for(j=0; j < beamCols*beamRows; j++) {
         x = DiskBeamMap[j][2];
         y = DiskBeamMap[j][3];
+        printf("memcpy %d: %d %d\n", j, x, y); fflush(stdout);
+        if(x==0 && y==0) continue;
+        if(x >= beamCols || y >= beamRows) continue;
         if( BeamMap[x][y] == beamMapInitVal ) continue;
         if( ptablect[x][y] == 0 ) continue;
         memcpy(&otable[nPhot], ptable[x][y], ptablect[x][y] * sizeof(photon));
@@ -395,9 +399,11 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
     for(i=0; i < beamCols; i++) {
 		for(j=0; j < beamRows; j++) {
 			if( BeamMap[i][j] == 0 ) continue;
+            printf("freeing %d %d\n", i, j); fflush(stdout);
 			free(ptable[i][j]);
 		}
 	}
+	printf("Done freeing beammap.\n"); fflush(stdout);
 
 
     diff = clock()-start;
