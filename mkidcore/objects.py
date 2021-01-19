@@ -314,49 +314,53 @@ class Beammap(object):
         a, b = None, None
         if newIDsboardA is not None:
             a = np.genfromtxt(str(newIDsboardA))
+            feedlineGuess = np.floor(np.average(a[~np.isnan(a[:, 0])][:, 0]) / 10000)
         if newIDsboardB is not None:
             b = np.genfromtxt(str(newIDsboardB))
+            feedlineGuess = np.floor(np.average(b[~np.isnan(b[:, 0])][:, 0]) / 10000)
 
-        feedlineGuess = np.floor(np.average(a[~np.isnan(a[:, 0])][:, 0]) / 10000)
+        # feedlineGuess = np.floor(np.average(a[~np.isnan(a[:, 0])][:, 0]) / 10000)
         feedlineBase = feedlineGuess * 10000
 
-        aMask = []
-        for i in range(len(a)):
-            if not np.isnan(a[i][0]) and not np.isnan(a[i][1]):
-                if (a[i][0] <= feedlineBase + 1023) and (a[i][1] <= feedlineBase + 1023):
-                    aMask.append(True)
-                else:
-                    aMask.append(False)
-            elif not np.isnan(a[i][0]) and np.isnan(a[i][1]):
-                if (a[i][0] <= feedlineBase + 1023):
-                    aMask.append(True)
-                else:
-                    aMask.append(False)
-            elif np.isnan(a[i][0]) and not np.isnan(a[i][1]):
-                if (a[i][1] <= feedlineBase + 1023):
-                    aMask.append(True)
-                else:
-                    aMask.append(False)
-        a = a[aMask]
+        if a is not None:
+            aMask = []
+            for i in range(len(a)):
+                if not np.isnan(a[i][0]) and not np.isnan(a[i][1]):
+                    if (a[i][0] <= feedlineBase + 1023) and (a[i][1] <= feedlineBase + 1023):
+                        aMask.append(True)
+                    else:
+                        aMask.append(False)
+                elif not np.isnan(a[i][0]) and np.isnan(a[i][1]):
+                    if (a[i][0] <= feedlineBase + 1023):
+                        aMask.append(True)
+                    else:
+                        aMask.append(False)
+                elif np.isnan(a[i][0]) and not np.isnan(a[i][1]):
+                    if (a[i][1] <= feedlineBase + 1023):
+                        aMask.append(True)
+                    else:
+                        aMask.append(False)
+            a = a[aMask]
 
-        bMask = []
-        for i in range(len(b)):
-            if not np.isnan(b[i][0]) and not np.isnan(b[i][1]):
-                if (b[i][0] >= feedlineBase + 1024) and (b[i][1] >= feedlineBase + 1024):
-                    bMask.append(True)
-                else:
-                    bMask.append(False)
-            elif not np.isnan(b[i][0]) and np.isnan(b[i][1]):
-                if (b[i][0] <= feedlineBase + 1024):
-                    bMask.append(True)
-                else:
-                    bMask.append(False)
-            elif np.isnan(b[i][0]) and not np.isnan(b[i][1]):
-                if (b[i][1] <= feedlineBase + 1024):
-                    bMask.append(True)
-                else:
-                    bMask.append(False)
-        b = b[bMask]
+        if b is not None:
+            bMask = []
+            for i in range(len(b)):
+                if not np.isnan(b[i][0]) and not np.isnan(b[i][1]):
+                    if (b[i][0] >= feedlineBase + 1024) and (b[i][1] >= feedlineBase + 1024):
+                        bMask.append(True)
+                    else:
+                        bMask.append(False)
+                elif not np.isnan(b[i][0]) and np.isnan(b[i][1]):
+                    if (b[i][0] <= feedlineBase + 1024):
+                        bMask.append(True)
+                    else:
+                        bMask.append(False)
+                elif np.isnan(b[i][0]) and not np.isnan(b[i][1]):
+                    if (b[i][1] <= feedlineBase + 1024):
+                        bMask.append(True)
+                    else:
+                        bMask.append(False)
+            b = b[bMask]
 
         if a is not None and b is not None:
             self.reassignmentList = np.concatenate((a, b), axis=0)
@@ -366,7 +370,7 @@ class Beammap(object):
             self.reassignmentList = a
 
         self.newResIDs = np.full_like(self.resIDs, np.nan)
-        self.newFlags = np.full_like(self.flags, np.nan)  #TODO This isn't valid flags are assumed to be ints
+        self.newFlags = np.full_like(self.flags, np.nan)  # TODO This isn't valid flags are assumed to be ints
 
         for i in self.reassignmentList:
             if i[2] == 1:
@@ -378,21 +382,50 @@ class Beammap(object):
                 self.newResIDs[mask] = i[1]
                 self.newFlags[mask] = beamMapFlags['failed']
 
-        mask = np.floor(self.resIDs / 10000) == feedlineGuess
+        if a and b:
+            full = True
+            mask = np.floor(self.resIDs / 10000) == feedlineGuess
+        elif a and not b:
+            full = False
+            validIDs = [10000*feedlineGuess, 10000*feedlineGuess + 1023]
+            mask = (self.resIDs >= validIDs[0]) & (self.resIDs <= validIDs[1])
+        else:
+            full = False
+            validIDs = [10000*feedlineGuess + 1024, 10000*feedlineGuess + 9999]
+            mask = (self.resIDs >= validIDs[0]) & (self.resIDs <= validIDs[1])
         old = self.resIDs[mask]
         new = self.newResIDs[mask]
         unused = np.setdiff1d(old, new)
 
         for i, j in enumerate(self.resIDs):
-            if (np.floor(j / 10000) == feedlineGuess) and np.isnan(self.newResIDs[i]):
-                self.newResIDs[i] = unused[0]
-                if unused[0] in self.reassignmentList[:, 1]:
-                    self.newFlags[i] = beamMapFlags['noDacTone']
-                elif unused[0] in self.reassignmentList[:, 0]:
-                    self.newFlags[i] = beamMapFlags['failed']
-                else:
-                    self.newFlags[i] = beamMapFlags['noDacTone']
-                unused = np.delete(unused, 0)
+            if full:
+                if (np.floor(j / 10000) == feedlineGuess) and np.isnan(self.newResIDs[i]):
+                    # print(unused[0])
+                    self.newResIDs[i] = unused[0]
+                    if unused[0] in self.reassignmentList[:, 1]:
+                        # print(f'noDacTon {unused[0]}')
+                        self.newFlags[i] = beamMapFlags['noDacTone']
+                    elif unused[0] in self.reassignmentList[:, 0]:
+                        # print(f'failed {unused[0]}')
+                        self.newFlags[i] = beamMapFlags['failed']
+                    else:
+                        # print(f'noDacTone2 {unused[0]}')
+                        self.newFlags[i] = beamMapFlags['noDacTone']
+                    unused = np.delete(unused, 0)
+            else:
+                if (j >= validIDs[0]) and (j <= validIDs[1]) and np.isnan(self.newResIDs[i]):
+                    # print(unused[0])
+                    self.newResIDs[i] = unused[0]
+                    if unused[0] in self.reassignmentList[:, 1]:
+                        # print(f'noDacTon {unused[0]}')
+                        self.newFlags[i] = beamMapFlags['noDacTone']
+                    elif unused[0] in self.reassignmentList[:, 0]:
+                        # print(f'failed {unused[0]}')
+                        self.newFlags[i] = beamMapFlags['failed']
+                    else:
+                        # print(f'noDacTone2 {unused[0]}')
+                        self.newFlags[i] = beamMapFlags['noDacTone']
+                    unused = np.delete(unused, 0)
 
         mask2 = mask & (self.flags == 0)
 
