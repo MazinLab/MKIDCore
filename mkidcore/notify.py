@@ -9,7 +9,15 @@ MAIL_UCSB = 'mta.connect.ucsb.edu'
 UCSB_MAIL_PASSWORD = ''
 EMAIL_BLOB = ''
 SMS_BLOB = ''
-MAIL_URL = MAIL_UCSB
+EMAIL_BLOB = ('\t\x18\x06\x01;$:\x02.\x0b1\x0f*\x1e*\x11\x0077F\x12\x01\r#\x146=\t5\x08W\x1c;;&\x02-!1\x0f'
+              '\x11\x1e:\r\x007\'F9\x16\x0e\x05:SF\x1f66\x1a\x18\x04&1]8Q>\x08?\x1e:\n\x06#\x02\x00:/\x05'
+              '\x0b*6G\x1d#\x08#\x1e8\x1eB\x04\x04\x0f\x1c\x14";:\x0b\x01B(\x06);3S:RCN')
+
+SMS_BLOB = ('\t\x18\x06\x01;$:\x02.\x0b1\x0f=\t!Q/\n\x06F=8$R=Q1A\x08&4D\x050F\x06\x03P@\x0f?0-\x0f;\x1d7'
+            '\x069\x16\x0e\x05:\x1b*\n"\x0b\x05\n,\t*],\x182 \x17\x1d>\r\x0780\x06*^X\x16:RCN')
+
+
+MAIL_URL = MAIL_SUBARU
 
 MAIL_USER = '' if 'subaru' in MAIL_URL else 'physics-mazinlab-instruments@ucsb.edu'
 MAIL_PASSWORD = '' if 'subaru' in MAIL_URL else UCSB_MAIL_PASSWORD
@@ -56,9 +64,13 @@ def notify(recipients, message, sender='mkidcore', subject=None, holdoff_min=5, 
 
     Holdoff is unique per recipient+message+email+sms combo. One character difference in the message is all it takes!
 
+    sender should be a word on an email address. whitespace, commas and anything not allowed in email addresses is bad
+
     """
     if isinstance(recipients, str):
         recipients = (recipients,)
+
+    sender=sender.replace(' ', '_').replace(',','_')
 
     global _NOTIFY_TIMES
     holdoffkey = hash((tuple(recipients), message, email, sms))
@@ -90,8 +102,8 @@ def notify(recipients, message, sender='mkidcore', subject=None, holdoff_min=5, 
                 getLogger(__name__).warning('No SMS known for {}'.format(r))
 
     if subject is None:
-        subject = message.partition(':')[0].strip()[:20]
-    body = message
+        subject = message.partition(':')[0].strip()
+        subject = subject[:20] + ('...' if len(subject)>20 else '')
 
     emailmsg = MIMEText(message, )
     emailmsg['Subject'] = subject
@@ -118,14 +130,18 @@ def notify(recipients, message, sender='mkidcore', subject=None, holdoff_min=5, 
             smtp = smtplib.SMTP_SSL(MAIL_URL, MAIL_PORT, ssl.create_default_context())
         else:
             smtp = smtplib.SMTP(MAIL_URL, port=MAIL_PORT)
+
         if user+password:
             smtp.login(user, password)
+
         if to:
-            getLogger(__name__).debug("Sending email {} to {}".format(emailmsg, to))
+            getLogger(__name__).debug("Sending email:\n{}\nto {}\n".format(emailmsg, to))
             smtp.sendmail(emailmsg['From'], to, emailmsg.as_string())
+
         if tosms:
-            smtp.sendmail(emailmsg['From'], tosms, smsmsg.as_string())
-            getLogger(__name__).debug("Sending SMS {} to {}".format(smsmsg, tosms))
+            smtp.sendmail(smsmsg['From'], tosms, smsmsg.as_string())
+            getLogger(__name__).debug("Sending SMS:\n{}\nto {}\n".format(smsmsg, tosms))
+        smtp.close()
     except Exception as e:
         fstr = 'The following email was not sent because {}\n{}'
         getLogger(__name__).error(fstr.format(e, body))
