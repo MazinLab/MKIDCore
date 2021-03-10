@@ -1,6 +1,7 @@
 from logging import getLogger
 import smtplib, time, ssl
 from email.mime.text import MIMEText
+from datetime import datetime
 
 
 MAIL_SUBARU = 'mail.subaru.nao.ac.jp'
@@ -58,14 +59,14 @@ def sms_email(recip):
     return False
 
 
-def notify(recipients, message, sender='mkidcore', subject=None, holdoff_min=5, email=True, sms=True):
+def notify(recipients, message, sender='mkidcore', subject=None, holdoff_min=5, email=True, sms=True, holdoff_key=None):
     """ If Subject is none will use the first 20 characters to the left of the of the first colon after stripping it of
     whitespace.
 
-    Holdoff is unique per recipient+message+email+sms combo. One character difference in the message is all it takes!
+    if holdoff_key is None hash((tuple(recipients), message, email, sms)) will be used which will means a one character
+    difference in the message is all it takes for a new message to be sent.
 
     sender should be a word on an email address. whitespace, commas and anything not allowed in email addresses is bad
-
     """
     if isinstance(recipients, str):
         recipients = (recipients,)
@@ -73,11 +74,12 @@ def notify(recipients, message, sender='mkidcore', subject=None, holdoff_min=5, 
     sender=sender.replace(' ', '_').replace(',','_')
 
     global _NOTIFY_TIMES
-    holdoffkey = hash((tuple(recipients), message, email, sms))
-    if time.time() - _NOTIFY_TIMES.get(holdoffkey, 0) < holdoff_min*60:
+    if holdoff_key is None:
+        holdoff_key = hash((tuple(recipients), message, email, sms))
+    if time.time() - _NOTIFY_TIMES.get(holdoff_key, 0) < holdoff_min*60:
         getLogger(__name__).debug('Notification hold-off in effect.')
         return
-    _NOTIFY_TIMES[holdoffkey] = time.time()
+    _NOTIFY_TIMES[holdoff_key] = time.time()
 
     to = []
     tosms = []
