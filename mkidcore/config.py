@@ -173,6 +173,20 @@ class ConfigThing(dict):
         else:
             object.__setattr__(self, key, value)
 
+    def __contains__(self, k):
+        """Contains only implements explicit keys, inheritance is not checked."""
+        with self._lock:
+            k1, _, krest = k.partition('.')
+            if krest in ('_a', '_c'):
+                k1 = k
+                krest = ''
+            if super(ConfigThing, self).__contains__(k1):
+                if krest:
+                    return krest in self[k1]
+                return True
+            else:
+                return False
+
     def get(self, name, default=None, inherit=True, all=False):
         """This implements do notation of the config tree with optional inheritance and optional
         default value. Default values other han None take precedence over inheritance.
@@ -235,27 +249,6 @@ class ConfigThing(dict):
             else:
                 return self[key]
 
-    def __contains__(self, k):
-        """Contains only implements explicit keys, inheritance is not checked."""
-        with self._lock:
-            k1, _, krest = k.partition('.')
-            if krest in ('_a', '_c'):
-                k1 = k
-                krest = ''
-            if super(ConfigThing, self).__contains__(k1):
-                if krest:
-                    return krest in self[k1]
-                return True
-            else:
-                return False
-
-    def registered(self, key, error=False):
-        if key not in self:
-            if error:
-                raise KeyError("Setting '{}' is not registered.".format(key))
-            return False
-        return True
-
     def keyisvalid(self, key, error=False):
         if key.endswith(RESERVED) or key.startswith('.') or key.endswith('.'):
             if error:
@@ -281,7 +274,7 @@ class ConfigThing(dict):
 
         """
         with self._lock:
-            if self.registered(key):
+            if key in self:
                 self._update(key, value, comment=comment)
             else:
                 try:
@@ -326,7 +319,8 @@ class ConfigThing(dict):
 
     def comment(self, key):
         self.keyisvalid(key, error=True)
-        self.registered(key, error=True)
+        if not key in self:
+            raise KeyError("Setting '{}' is not registered.".format(key))
         try:
             tree, _, leaf = key.rpartition('.')
             return self.get(tree)[leaf+'._c']
@@ -338,7 +332,7 @@ class ConfigThing(dict):
         update is True."""
         with self._lock:
             self.keyisvalid(key, error=True)
-            ret = not self.registered(key)
+            ret = not (key in self)
             if not ret and not update:
                 return ret
             self._register(key, initialvalue, allowed=allowed, comment=comment)

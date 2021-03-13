@@ -38,13 +38,6 @@ class TestConfigDict(TestCase):
         self.assertEqual(c.get('b.c.d', default=50), 50)
         self.assertEqual(c.get('b.c.d', inherit=True), 0)
 
-    def test_registered(self):
-        c = ConfigThing().registerfromkvlist((('a', 1), ('b.c.d', 3)), namespace='')
-        self.assertTrue(c.registered('a', error=False))
-        self.assertTrue(c.registered('b.c.d'))
-        self.assertFalse(c.registered('b.c.z'))
-        self.assertRaises(KeyError, c.registered, 'b.c.z', error=True)
-
     def test_keyisvalid(self):
         c = ConfigThing()
         self.assertTrue(c.keyisvalid('a.b.c'))
