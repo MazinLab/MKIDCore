@@ -82,6 +82,7 @@ class ConfigThing(dict):
     """
     yaml_tag = u'!configdict'
     __frozen = False
+    REQUIRED_KEYS = tuple()
 
     def __init__(self, *args):
         """
@@ -269,7 +270,7 @@ class ConfigThing(dict):
 
     def keys(self):
         """Hide reserved keys"""
-        return filter(lambda x: not (isinstance(x,str) and x.endswith(RESERVED)),
+        return filter(lambda x: not (isinstance(x, str) and x.endswith(RESERVED)),
                       super(ConfigThing, self).keys())
 
     def items(self):
@@ -357,10 +358,13 @@ class ConfigThing(dict):
             self.keyisvalid(key, error=True)
             if '.' in key:
                 root,_,end = key.rpartition('.')
-                d = self.get(root, {})
-                for k in [end]+[end+r for r in RESERVED]:
-                    d.pop(k, None)
+                # d = self.get(root, {})
+                # for k in [end]+[end+r for r in RESERVED]:
+                #     d.pop(k, None)
+                self.get(root).unregister(end)
             else:
+                if key in self.REQUIRED_KEYS:
+                    raise KeyError('{} is required and may not be deregistered'.format(key))
                 for k in [key]+[key+r for r in RESERVED]:
                     self.pop(k, None)
 
@@ -386,9 +390,9 @@ class ConfigThing(dict):
 
         returns self. Threadsafe.
         """
-            if namespace is None:
-                namespace = caller_name().lower()
-                getLogger('MKIDConfig').debug('Assuming namespace "{}"'.format(namespace))
+        if namespace is None:
+            namespace = caller_name().lower()
+            getLogger('MKIDConfig').debug('Assuming namespace "{}"'.format(namespace))
 
         toreg = ([(k, v) for k, v in cp.items('DEFAULT')] +
                  [(s + '.' + k, v) for s in cp.sections() for k, v in cp.items(s)])
@@ -422,7 +426,7 @@ class ConfigThing(dict):
 
 
 def cannonizekey(k):
-    """Enforce cannonicity of config keys lowercase, no spaces (replace with underscore)"""
+    """ Enforce cannonicity of config keys lowercase, no spaces (replace with underscore)"""
     return k.strip().lower().replace(' ', '_')
 
 
@@ -431,7 +435,7 @@ def cannonizevalue(v):
     if isinstance(v, (float, int)):
         return v
     try:
-        v=dequote(v)
+        v = dequote(v)
     except:
         pass
     try:
