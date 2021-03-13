@@ -378,19 +378,22 @@ class ConfigThing(dict):
                 yaml.dump(self, f)
 
     def registerfromconfigparser(self, cp, namespace=None):
-        """loads all data in the config parser object, overwriting any that already exist"""
-        with self._lock:
+        """
+        Build a key:value list from a config parser object anre register with registerfromkvlist.
+        Keys in DEFAULT will be placed at namespace.key, keys in sections will be placed at namespace.section.key
+
+        Uses the callers name as the default namespace name.
+
+        returns self. Threadsafe.
+        """
             if namespace is None:
                 namespace = caller_name().lower()
                 getLogger('MKIDConfig').debug('Assuming namespace "{}"'.format(namespace))
-            namespace = namespace if namespace.endswith('.') else (namespace + '.' if namespace else '')
-            for k, v in cp.items('DEFAULT'):
-                self.register(cannonizekey(namespace+k), cannonizevalue(v), update=True)
-            for s in cp.sections():
-                ns = namespace + s + '.'
-                for k, v in cp.items(s):
-                    self.register(cannonizekey(ns + k), cannonizevalue(v), update=True)
-            return self
+
+        toreg = ([(k, v) for k, v in cp.items('DEFAULT')] +
+                 [(s + '.' + k, v) for s in cp.sections() for k, v in cp.items(s)])
+
+        return self.registerfromkvlist(toreg, namespace=namespace)
 
     def registerfromkvlist(self, kv, namespace=None):
         """
