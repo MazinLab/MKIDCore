@@ -16,7 +16,7 @@ except ImportError:
     import configparser
     from io import StringIO
 
-RESERVED = ('._c', '._a')
+RESERVED = ('._c', '._a')  #Internal keys hidden from the user for storing comments and
 
 yaml = ruamel.yaml.YAML()
 yaml_object = ruamel.yaml.yaml_object
@@ -55,12 +55,12 @@ class ConfigThing(dict):
     """
     This Class implements a YAML-backed, nestable configuration object. The general idea is that
     settings are registered, e.g. .register('a.b.c.d', thingA), updated e.g.
-    .update('a.b.c.d', thingB), mutated is partially supported e.g .a.b.c.d.append(foo) works if
-    a.b.c.d is a list, but .update would be preferred. It is best not to think of this as a
-    dictionary at all!
+    .update('a.b.c.d', thingB), mutation is partially supported e.g .a.b.c.d.append(foo) works if
+    a.b.c.d is a list, but .update would be preferred.
 
     .get may be used to support both default values (aside from None, which is not supported at
-    present) and inheritance, though inheritance is no supported across nodes of other type.
+    present) and inheritance, though inheritance is not supported across nodes of other type.
+    TODO what does this mean
 
     To handle defaults consider, e.g.
     for thing in config.namespace.thinglist:
@@ -130,6 +130,13 @@ class ConfigThing(dict):
         c._setlock()
         return c
 
+    def dump(self):
+        """Dump the config to a YAML string"""
+        with self._lock:
+            out = StringIO()
+            yaml.dump(self, out)
+            return out.getvalue()
+
     def __getstate__(self):
         d = self.__dict__.copy()
         d.pop('_lock')
@@ -139,20 +146,17 @@ class ConfigThing(dict):
         self.__dict__ = state
         self._setlock()
 
-    def dump(self):
-        """Dump the config to a YAML string"""
-        with self._lock:
-            out = StringIO()
-            yaml.dump(self, out)
-            return out.getvalue()
-
     def __getattr__(self, key):
-        """This implements dot notation of the config tree without default inheritance
+        """
+        Support dot notation of the config tree without default inheritance
 
-        In a.b.c Python resolves a.b by calling this function then calls .c on the return of a.b,
+        In a.b.c Python resolves a.b by calling this function on a then calls .c on the return of a.b,
         so it is nontrivial for the a.b code to trap any KeyError that would be raised in looking for .c
         and thus silently returning a.c. This is probably for the best as it makes the intent more
-        explicit. Regardless no config inheritance when accessing with dot notation
+        explicit. Regardless no config inheritance when accessing with dot notation.
+
+        Inheritance could be effected with a parital and some dynamic function wrapper but that adds
+        complexity.
         """
         if key.startswith('__'):
             try:
@@ -188,15 +192,20 @@ class ConfigThing(dict):
                 return False
 
     def get(self, name, default=None, inherit=True, all=False):
-        """This implements do notation of the config tree with optional inheritance and optional
-        default value. Default values other han None take precedence over inheritance.
+        """
+        Retrieve a config key (i.e. a.config.namespace.key), with options for defaults and inheritance
+        (i.e. a.config.key).
 
-        all will return a tuple (value, comment, allowed
+        This implements dot notation of the config tree with optional inheritance and optional
+        default value. If a default is set (aside from None) it takes precedence over inherited values.
+
+        all will return a tuple (value, comment, allowed)
 
         The empty string is a convenience for returning self
 
-        Inheritance means that if cfg.beam.sweep.imgdir doesn't exist but
-        cfg.beam.imgdir (or then cfg.imgdir) would be returned provided they are leafs
+        Inheritance means that if cfg.beam.sweep.imgdir doesn't exist then cfg.beam.imgdir (or then cfg.imgdir)
+        would be in its place, provided they are a leaf. If a name in the parent namespace is a config node
+        then it is considered something discrete and not name is treated as not found.
         """
         with self._lock:
             k1, _, krest = name.partition('.')
@@ -250,6 +259,7 @@ class ConfigThing(dict):
                 return self[key]
 
     def keyisvalid(self, key, error=False):
+        """Return true iff key may be used as a key. Keys must be strings"""
         if key.endswith(RESERVED) or key.startswith('.') or key.endswith('.'):
             if error:
                 raise KeyError("Setting keys may not end with '{}'.".format(RESERVED))
@@ -383,17 +393,25 @@ class ConfigThing(dict):
             return self
 
     def registerfromkvlist(self, kv, namespace=None):
-        """loads all data in the keyvalue iterable, overwriting any that already exist"""
+        """
+        Register all (key, value) pairs in the kv iterable. Existing keys will be updated.
+
+        Uses the callers name as the default namespace name.
+
+        returns self. Threadsafe.
+        """
         with self._lock:
             if namespace is None:
                 namespace = caller_name().lower()
                 getLogger('MKIDConfig').debug('Assuming namespace "{}"'.format(namespace))
+
             namespace = namespace if namespace.endswith('.') else (namespace + '.' if namespace else '')
             for k, v in kv:
                 self.register(cannonizekey(namespace + k), cannonizevalue(v), update=True)
             return self
 
     def _setlock(self, lock=None):
+        """ Set the RLock for self and all nested configs"""
         self._lock = lock if lock is not None else RLock()
         for k,v in self.items():
             if isinstance(v, ConfigThing):
@@ -406,6 +424,7 @@ def cannonizekey(k):
 
 
 def cannonizevalue(v):
+    """ Make v into a float or int if possible, else remove any extraneous quotation marks from strings """
     if isinstance(v, (float, int)):
         return v
     try:
@@ -434,7 +453,8 @@ def dequote(v):
 
 def importoldconfig(config, cfgfile, namespace=None):
     """
-    Load an old config such that settings are accessible by namespace.section.key
+    Load an old config file (.cfg) into the ConfigDict config such that settings are accessible by
+    namespace.section.key
     Sections are coerced to lowercase and spaces are replaced with underscores.
     The default section keys are accessible as namespace.key. If called on successive
     configfiles any collisions will be handled silently by adopting the value
@@ -462,7 +482,7 @@ def loadoldconfig(cfgfile):
     return cp
 
 
-def _consolidateconfig(cd):
+def _consolidate_roach_config(cd):
     """Merge Roach and sweep sections into objects"""
     roaches, sweeps = {}, []
     for k in cd.keys():
@@ -570,10 +590,10 @@ def ingestoldconfigs(cfiles=('beammap.align.cfg', 'beammap.clean.cfg', 'beammap.
         cp = loadoldconfig(cf)
         config.registerfromconfigparser(cp, cf[:-4])
 
-    _consolidateconfig(config.beammap.sweep)
-    _consolidateconfig(config.templar)
-    _consolidateconfig(config.initgui)
-    _consolidateconfig(config.dashboard)
+    _consolidate_roach_config(config.beammap.sweep)
+    _consolidate_roach_config(config.templar)
+    _consolidate_roach_config(config.initgui)
+    _consolidate_roach_config(config.dashboard)
 
     return config
 
