@@ -84,7 +84,7 @@ class ConfigThing(dict):
     __frozen = False
     REQUIRED_KEYS = tuple()
 
-    def __init__(self, *args):
+    def __init__(self, *args, lock=None):
         """
         If initialized with a list of tuples cannonization is not enforced on values
         in general you should call ConfigThing().registerfromkvlist() as __init__ will not
@@ -92,7 +92,7 @@ class ConfigThing(dict):
         """
         if args:
             super(ConfigThing, self).update([(cannonizekey(k), v) for k, v in args[0]])
-        self._lock = RLock()
+        self._lock = RLock() if lock is None else lock
         self.__frozen = True
 
     @classmethod
@@ -315,17 +315,21 @@ class ConfigThing(dict):
     def _register(self, key, initialvalue, allowed=None, comment=None):
         k1, _, krest = key.partition('.')
         if krest:
-            cd = self.get(k1, ConfigThing())
+            cd = self.get(k1, ConfigThing(self._lock))
             cd._register(krest, initialvalue, allowed=allowed, comment=comment)
             self[k1] = cd
-            # getLogger('MKIDConfig').debug('registering {}.{}={}'.format(k1,krest, initialvalue))
+            getLogger(__name__).debug('registered {}.{}={}'.format(k1, krest, initialvalue))
         else:
-            # getLogger('MKIDConfig').debug('registering {}={}'.format(k1, initialvalue))
+            if isinstance(initialvalue, ConfigThing):
+                getLogger(__name__).debug(f'Updating lock for key {key}')
+                initialvalue._setlock(lock=self._lock)
+
             self[k1] = initialvalue
             if comment:
                 self[key + '._c'] = comment
             if allowed is not None:
                 self[key + '._a'] = allowed
+            getLogger(__name__).debug('registering {}={}'.format(k1, initialvalue))
         return self
 
     def comment(self, key):
