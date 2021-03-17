@@ -1,8 +1,10 @@
 import re
-from mkidcore.corelog import getLogger
 import os
 import numpy as np
-import matplotlib.pyplot as plt
+import mkidcore.config
+from mkidcore.corelog import getLogger
+import astropy.units
+
 
 MEC_FEEDLINE_INFO = dict(num=10, width=14, length=146)
 DARKNESS_FEEDLINE_INFO = dict(num=5, width=25, length=80)
@@ -33,12 +35,30 @@ ROACHESA = {'mec': [k for k, v in MEC_NUM_FL_MAP.items() if 'a' in v],
 ROACHESB = {'mec': [k for k, v in MEC_NUM_FL_MAP.items() if 'b' in v],
             'darkness': [k for k, v in DARKNESS_NUM_FL_MAP.items() if 'b' in v],
             'bluefors': []}
+
 for k in list(ROACHES):
     ROACHES[k.upper()] = ROACHES[k]
 for k in list(ROACHESA):
     ROACHESA[k.upper()] = ROACHESA[k]
 for k in list(ROACHESB):
     ROACHESB[k.upper()] = ROACHESB[k]
+
+INSTRUMENT_INFO = {'mec': dict(deadtime_us=10, energy_bin_width_ev=0.01, minimum_wavelength=800,
+                               maximum_wavelength=1400, nominal_platescale_mas=10.4),
+                   'darkness': dict(deadtime_us=10, energy_bin_width_ev=0.01, minimum_wavelength=800,
+                                    maximum_wavelength=1400, nominal_platescale_mas=10.4)}
+
+
+class InstrumentInfo(mkidcore.config.ConfigThing):
+    def __init__(self, instrument):
+        super().__init__()
+        try:
+            for k, v in INSTRUMENT_INFO[instrument.lower()].items():
+                if 'platescale' in k:
+                    v*=astropy.units.mas
+                self.register(k, v)
+        except KeyError:
+            raise ValueError('Unknown instrument: '+instrument)
 
 
 def CONEX2PIXEL(xCon, yCon):
@@ -137,7 +157,7 @@ def roachnum(fl, band, instrument='MEC'):
 
 
 def guessFeedline(filename):
-    # TODO generaize and find a home for this function
+    # TODO generalize and find a home for this function
     try:
         flNum = int(re.search('fl\d', filename, re.IGNORECASE).group()[-1])
     except AttributeError:
