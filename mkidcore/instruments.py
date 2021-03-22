@@ -50,16 +50,33 @@ INSTRUMENT_INFO = {'mec': dict(deadtime_us=10, energy_bin_width_ev=0.01, minimum
 
 
 class InstrumentInfo(mkidcore.config.ConfigThing):
-    def __init__(self, instrument):
-        super().__init__()
-        try:
-            for k, v in INSTRUMENT_INFO[instrument.lower()].items():
-                if 'platescale' in k:
-                    v*=astropy.units.mas
-                self.register(k, v)
-        except KeyError:
-            raise ValueError('Unknown instrument: '+instrument)
+    yaml_tag = u'!inst_nfo'
 
+    def __init__(self, *args, **kwargs):
+        if len(args) == 1 and isinstance(args[0], str):
+            super().__init__(**kwargs)
+            try:
+                for k, v in INSTRUMENT_INFO[args[0].lower()].items():
+                    if 'nominal_platescale_mas' in k:
+                        v *= astropy.units.mas
+                    self.register(k, v)
+            except KeyError:
+                raise ValueError('Unknown instrument: ' + args[0])
+        else:
+            super().__init__(*args, **kwargs)
+
+    @classmethod
+    def to_yaml(cls, representer, node):
+        x = {k: v for k, v in node.items()}
+        x['nominal_platescale_mas'] = float(x['nominal_platescale_mas'].value)
+        return representer.represent_mapping(cls.yaml_tag, x)
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        ret = super().from_yaml(loader, node)
+        return ret
+
+mkidcore.config.yaml.register_class(InstrumentInfo)
 
 def CONEX2PIXEL(xCon, yCon):
     """

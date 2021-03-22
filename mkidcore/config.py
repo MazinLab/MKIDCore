@@ -97,7 +97,12 @@ class ConfigThing(dict):
 
     @classmethod
     def to_yaml(cls, representer, node):
-        return representer.represent_mapping(cls.yaml_tag, dict(node))
+        # comments = node.comment_dict()
+        # import ruamel.yaml.comments
+        # d = ruamel.yaml.comments.CommentedMap(node.asdict(keep_internal=False))
+        # for k, v in comments.items():
+        #     d._yaml_add_eol_comment(k, [v])
+        return representer.represent_mapping(cls.yaml_tag, node.asdict(keep_internal=False))
 
     @classmethod
     def from_yaml(cls, loader, node):
@@ -106,9 +111,24 @@ class ConfigThing(dict):
         # node is MappingNode(tag=u'!configdict', value=[(ScalarNode(tag=u'tag:yaml.org,2002:str', value=u'initgui'),
         # cls is ConfigThing
         d = loader.construct_pairs(node)  #WTH this one line took half a day to get right
-        d = cls(d)
+            d = cls(d)
         d._setlock()
         return d
+
+    def comment_dict(self):
+        """return a dictionary of comments for the keys. will only include keys at the level e.g. if this.key is a
+        nested config and this.key.value has a comment that comment will not be included, Get it by calling
+        this.key.comment_dict() """
+        return {k.partition('.')[0]: v for k, v in super().items() if '._c' in k}
+
+    def asdict(self, keep_internal=False):
+        """Return a copy of the config as a dictionary, unless keep_internal =True the dict will be purged of
+        all ._c and ._a keys"""
+        if keep_internal:
+            return dict(self)
+        else:
+            return {k: v for k, v in super().items() if '._' not in k}
+
     #
     # def __copy__(self):
     #     ret = super(ConfigThing, self).__copy__()
@@ -315,7 +335,7 @@ class ConfigThing(dict):
     def _register(self, key, initialvalue, allowed=None, comment=None):
         k1, _, krest = key.partition('.')
         if krest:
-            cd = self.get(k1, ConfigThing(self._lock))
+            cd = self.get(k1, ConfigThing(lock=self._lock))
             cd._register(krest, initialvalue, allowed=allowed, comment=comment)
             self[k1] = cd
             getLogger(__name__).debug('registered {}.{}={}'.format(k1, krest, initialvalue))
