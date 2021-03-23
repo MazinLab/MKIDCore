@@ -114,7 +114,7 @@ class Beammap(object):
     """
     yaml_tag = u'!bmap'
 
-    def __init__(self, file=None, xydim=None, default='MEC', freqpath=''):
+    def __init__(self, specifier='MEC', xydim=None, freqpath=''):
         """
         Constructor.
 
@@ -126,8 +126,11 @@ class Beammap(object):
                         default beammap.
                     If instance of Beammap, creates a copy
         """
-        if default.lower() == 'bluefors':
-            raise ValueError('There is no default beammap for the bluefors fridge')
+        if not os.path.exists(specifier):
+            default = specifier
+            file = None
+        else:
+            file = specifier
 
         self.file = file
         self.resIDs = None
