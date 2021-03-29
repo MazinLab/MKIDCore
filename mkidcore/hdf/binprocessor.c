@@ -59,6 +59,7 @@
 #define TSOFFS 1514764800 //difference between epoch and Jan 1 2018 UTC
 
 #define MAX_CNT_RATE 2500
+#define NBMFIELD 4
 
 struct datapacket {
     int baseline:17;
@@ -86,6 +87,30 @@ void FixOverflowTimestamps(struct hdrpacket* hdr, int fileNameTime, int tsOffs) 
     hdr->timestamp += 2000*nWraps*1048576;
 }
 
+int PopulateBeamMapImage(long *DiskBeamMap, uint32_t **BeamMap, uint32_t **BeamFlag, 
+        int nBMEntries, int beamCols, int beamRows){
+    int i, x, y, resID, flag;
+    for(i = 0; i < nBMEntries; i++){
+        resID = DiskBeamMap[i*NBMFIELD];
+        flag = DiskBeamMap[i*NBMFIELD + 1];
+        x = DiskBeamMap[i*NBMFIELD + 2];
+        y = DiskBeamMap[i*NBMFIELD + 3];
+        if((x < 0) || (x >= beamCols))
+            continue;
+        if((y < 0) || (y >= beamRows))
+            continue;
+
+        BeamMap[x][y] = resID;
+        if(flag>1) 
+            BeamFlag[x][y] = 2;
+        else 
+            BeamFlag[x][y] = flag;
+
+    }
+
+    return 0;
+
+}
 
 long ParseBeamMapFile(const char *BeamFile, uint32_t **BeamMap, uint32_t **BeamFlag, long **DiskBeamMap) {
     // read in Beam Map file
@@ -182,7 +207,7 @@ void ParseToMem(char *packet, uint64_t l, int tsOffs, int FirstFile, int iFile, 
 
 
 long extract_photons(const char *binpath, unsigned long start_timestamp, unsigned long integration_time,
-                     const char *beammap_file, unsigned int bmap_ncol, unsigned int bmap_nrow,
+                     long *DiskBeamMap, int n_bm_entries, unsigned int bmap_ncol, unsigned int bmap_nrow,
                      unsigned long n_max_photons, photon* otable) {
 
 
@@ -207,10 +232,10 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
     photon ***ptable;
     uint32_t **ptablect;
     uint64_t *data;
-    long **DiskBeamMap;
-    long DiskBeamMapLen;
+    //long DiskBeamMapLen;
     const unsigned long DATA_BUFFER_SIZE_BYTES = 1.1*MAX_CNT_RATE*bmap_ncol*bmap_nrow*8;
     int checkExists;
+    int nBMEntries;
 
     //Timing variables
     struct tm *startTime;
@@ -228,6 +253,7 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
 	mapflag=1;
 	beamCols = bmap_ncol;
 	beamRows = bmap_nrow;
+    nBMEntries = n_bm_entries;
 
 	 // check whether binpath exists
     DIR* dir = opendir(binpath);
@@ -263,7 +289,7 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
     ResIdString = (char***)malloc(beamCols * sizeof(char**));
     toWriteBeamMap = (uint32_t*)malloc(beamCols * beamRows * sizeof(uint32_t));
     toWriteBeamFlag = (uint32_t*)malloc(beamCols * beamRows * sizeof(uint32_t));
-    DiskBeamMap = (long **)malloc(beamCols * beamRows * sizeof(long*));
+    //DiskBeamMap = (long **)malloc(beamCols * beamRows * sizeof(long*));
     data = (uint64_t *) malloc(DATA_BUFFER_SIZE_BYTES);
 
     printf("Allocated flag maps.\n"); fflush(stdout);
@@ -277,7 +303,7 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
         for(j=0; j<beamRows; j++) ResIdString[i][j] = (char*)malloc(20 * sizeof(char));
     }
 
-    for(i=0; i<beamCols*beamRows; i++) DiskBeamMap[i] = (long *)calloc(4, sizeof(long));
+    //for(i=0; i<beamCols*beamRows; i++) DiskBeamMap[i] = (long *)calloc(4, sizeof(long));
 
     printf("Allocated ptable.\n"); fflush(stdout);
 
@@ -286,7 +312,8 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
     InitializeBeamMap(BeamMap, beamMapInitVal, beamCols, beamRows); //initialize to out of bounds resID
     InitializeBeamMap(BeamFlag, 1, beamCols, beamRows); //initialize flag to one
 //    printf(BeamMap); fflush(stdout);
-    DiskBeamMapLen=ParseBeamMapFile(beammap_file,BeamMap,BeamFlag,DiskBeamMap);
+    //DiskBeamMapLen=ParseBeamMapFile(beammap_file,BeamMap,BeamFlag,DiskBeamMap);
+    PopulateBeamMapImage(DiskBeamMap, BeamMap, BeamFlag, nBMEntries, beamCols, beamRows);
 
     for(i=0; i < beamCols; i++) {
 		for(j=0; j < beamRows; j++) {
@@ -381,9 +408,9 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
     printf("BM0 %d\n", BeamMap[0][0]);
 
     nPhot=0;
-    for(j=0; j < beamCols*beamRows; j++) {
-        x = DiskBeamMap[j][2];
-        y = DiskBeamMap[j][3];
+    for(j=0; j < nBMEntries; j++) {
+        x = DiskBeamMap[NBMFIELD*j + 2];
+        y = DiskBeamMap[NBMFIELD*j + 3];
         printf("memcpy %d: %d %d\n", j, x, y); fflush(stdout);
         if(x==0 && y==0) continue;
         if(x >= beamCols || y >= beamRows) continue;
@@ -421,8 +448,8 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
         free(ResIdString[i]);
     }
 
-    for(i=0; i<beamCols*beamRows; i++)
-        free(DiskBeamMap[i]);
+    //for(i=0; i<beamCols*beamRows; i++)
+    //    free(DiskBeamMap[i]);
 
     free(BeamMap);
     free(BeamFlag);

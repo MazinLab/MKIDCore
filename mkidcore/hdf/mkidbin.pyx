@@ -9,6 +9,7 @@ import numpy as np
 cimport numpy as np
 import os
 from mkidcore.corelog import getLogger
+from mkidcore.objects import Beammap
 from mkidcore.headers import PhotonNumpyType as np_photon
 from mkidcore.headers import PhotonNumpyTypeBin as np_photon_bin
 
@@ -18,8 +19,9 @@ PHOTON_SIZE_BYTES = 6*4
 
 cdef extern from "binprocessor.h":
     struct photon
-    long extract_photons(const char *dname, unsigned long start, unsigned long inttime, const char *bmap,
-                         unsigned int x, unsigned int y,unsigned long n_max_photons, photon* photons)
+    long extract_photons(const char *dname, unsigned long start, unsigned long inttime,
+                     long *DiskBeamMap, int n_bm_entries, unsigned int bmap_ncol, 
+                     unsigned int bmap_nrow, unsigned long n_max_photons, photon* photons);
     long extract_photons_dummy(const char *dname, unsigned long start, unsigned long inttime, const char *bmap,
                                unsigned int x, unsigned int y, unsigned long n_max_photons, photon* photons)
     long cparsebin(const char *fName, unsigned long max_len, float* baseline, float* wavelength,
@@ -29,13 +31,23 @@ cdef extern from "binprocessor.h":
 def extract(directory, start, inttime, beamfile, x, y, include_baseline=False):
     files = [os.path.join(directory, '{}.bin'.format(t)) for t in range(start-1, start+inttime+1)]
     files = filter(os.path.exists, files)
+
+    beammap = Beammap(beamfile, xydim=(x, y))
+    bmarr = np.vstack((beammap.resIDs, beammap.flag, beammap.xCoords, beammap.yCoords)).T
+    if np.any(np.isnan(bmarr)):
+        raise Exception('NaNs in beammap')
+    if np.any((beammap.xCoords >= x) | (beammap.xCoords < 0) | (beammap.yCoords >= y) | (beammap.yCoords < 0)):
+        raise Exception('Beammap coords out of range')
+    bmarr = np.ascontiguousarray(bmarr.astype(int)) #bmarr is nPix x 4
+    n_bm_entries = int(bmarr.shape[0])
+
     n_max_photons = int(np.ceil(sum([os.stat(f).st_size for f in files])/PHOTON_BIN_SIZE_BYTES))
     getLogger(__name__).debug('Calling C to extract ~{:g} photons, will require ~{:.1f}GB of RAM'.format(n_max_photons,
                                                                                    n_max_photons*PHOTON_SIZE_BYTES/1024/1024/1024))
     photons = np.zeros(n_max_photons, dtype=np_photon_bin)
     photons = np.ascontiguousarray(photons)
-    nphotons = extract_photons(directory.encode('UTF-8'), start, inttime, beamfile.encode('UTF-8'), x, y,
-                               n_max_photons, <photon*> np.PyArray_DATA(photons))
+    nphotons = extract_photons(directory.encode('UTF-8'), start, inttime, <long*>np.PyArray_DATA(bmarr), n_bm_entries,
+                            x, y, n_max_photons, <photon*> np.PyArray_DATA(photons))
     getLogger(__name__).debug('C code returned {} photons'.format(nphotons))
     photons = photons[:nphotons]
 
