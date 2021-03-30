@@ -28,11 +28,12 @@ cdef extern from "binprocessor.h":
                    unsigned long long* timestamp, unsigned int* ycoord, unsigned int* xcoord, unsigned int* roach)
 
 
-def extract(directory, start, inttime, beamfile, x, y, include_baseline=False):
+def extract(directory, start, inttime, beammap, x, y, include_baseline=False):
     files = [os.path.join(directory, '{}.bin'.format(t)) for t in range(start-1, start+inttime+1)]
     files = filter(os.path.exists, files)
+    if isinstance(beammap, str):
+        beammap = Beammap(beammap, xydim=(x, y))
 
-    beammap = Beammap(beamfile, xydim=(x, y))
     bmarr = np.vstack((beammap.resIDs, beammap.flag, beammap.xCoords, beammap.yCoords)).T
     if np.any(np.isnan(bmarr)):
         raise Exception('NaNs in beammap')
