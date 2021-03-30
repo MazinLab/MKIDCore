@@ -459,7 +459,6 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
     free(ResIdString);
     free(toWriteBeamMap);
     free(toWriteBeamFlag);
-    free(DiskBeamMap);
 
     free(yearStartTime);
 
