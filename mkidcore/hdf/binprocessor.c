@@ -90,6 +90,7 @@ void FixOverflowTimestamps(struct hdrpacket* hdr, int fileNameTime, int tsOffs) 
 int PopulateBeamMapImage(long *DiskBeamMap, uint32_t **BeamMap, uint32_t **BeamFlag, 
         int nBMEntries, int beamCols, int beamRows){
     int i, x, y, resID, flag;
+    printf("Using new MKB!");
     for(i = 0; i < nBMEntries; i++){
         resID = DiskBeamMap[i*NBMFIELD];
         flag = DiskBeamMap[i*NBMFIELD + 1];

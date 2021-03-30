@@ -34,7 +34,7 @@ def extract(directory, start, inttime, beammap, x, y, include_baseline=False):
     if isinstance(beammap, str):
         beammap = Beammap(beammap, xydim=(x, y))
 
-    bmarr = np.vstack((beammap.resIDs, beammap.flag, beammap.xCoords, beammap.yCoords)).T
+    bmarr = np.vstack((beammap.resIDs, beammap.flags, beammap.xCoords, beammap.yCoords)).T
     if np.any(np.isnan(bmarr)):
         raise Exception('NaNs in beammap')
     if np.any((beammap.xCoords >= x) | (beammap.xCoords < 0) | (beammap.yCoords >= y) | (beammap.yCoords < 0)):

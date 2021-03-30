@@ -169,7 +169,7 @@ class Beammap(object):
         if 'default' in d:
             bmap = cls(default=d['default'])
         else:
-            bmap = cls(file=d['file'], xydim=(int(d['ncols']), int(d['nrows'])))
+            bmap = cls(specifier=d['file'], xydim=(int(d['ncols']), int(d['nrows'])))
 
         if 'freqfiles' in d:
             try:
