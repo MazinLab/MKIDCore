@@ -21,14 +21,14 @@ cdef extern from "binprocessor.h":
     struct photon
     long extract_photons(const char *dname, unsigned long start, unsigned long inttime,
                      long *DiskBeamMap, int n_bm_entries, unsigned int bmap_ncol, 
-                     unsigned int bmap_nrow, unsigned long n_max_photons, photon* photons);
+                     unsigned int bmap_nrow, unsigned long n_max_photons, photon* photons, int verbose);
     long extract_photons_dummy(const char *dname, unsigned long start, unsigned long inttime, const char *bmap,
                                unsigned int x, unsigned int y, unsigned long n_max_photons, photon* photons)
     long cparsebin(const char *fName, unsigned long max_len, float* baseline, float* wavelength,
                    unsigned long long* timestamp, unsigned int* ycoord, unsigned int* xcoord, unsigned int* roach)
 
 
-def extract(directory, start, inttime, beammap, x, y, include_baseline=False):
+def extract(directory, start, inttime, beammap, x, y, include_baseline=False, verbose=0):
     files = [os.path.join(directory, '{}.bin'.format(t)) for t in range(start-1, start+inttime+1)]
     files = filter(os.path.exists, files)
     if isinstance(beammap, str):
@@ -48,7 +48,7 @@ def extract(directory, start, inttime, beammap, x, y, include_baseline=False):
     photons = np.zeros(n_max_photons, dtype=np_photon_bin)
     photons = np.ascontiguousarray(photons)
     nphotons = extract_photons(directory.encode('UTF-8'), start, inttime, <long*>np.PyArray_DATA(bmarr), n_bm_entries,
-                            x, y, n_max_photons, <photon*> np.PyArray_DATA(photons))
+                            x, y, n_max_photons, <photon*> np.PyArray_DATA(photons), verbose)
     getLogger(__name__).debug('C code returned {} photons'.format(nphotons))
     photons = photons[:nphotons]
 

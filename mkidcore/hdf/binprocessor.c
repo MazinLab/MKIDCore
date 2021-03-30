@@ -90,7 +90,7 @@ void FixOverflowTimestamps(struct hdrpacket* hdr, int fileNameTime, int tsOffs) 
 int PopulateBeamMapImage(long *DiskBeamMap, uint32_t **BeamMap, uint32_t **BeamFlag, 
         int nBMEntries, int beamCols, int beamRows){
     int i, x, y, resID, flag;
-    printf("Using new MKB!");
+    //printf("Using new MKB!");
     for(i = 0; i < nBMEntries; i++){
         resID = DiskBeamMap[i*NBMFIELD];
         flag = DiskBeamMap[i*NBMFIELD + 1];
@@ -113,35 +113,6 @@ int PopulateBeamMapImage(long *DiskBeamMap, uint32_t **BeamMap, uint32_t **BeamF
 
 }
 
-long ParseBeamMapFile(const char *BeamFile, uint32_t **BeamMap, uint32_t **BeamFlag, long **DiskBeamMap) {
-    // read in Beam Map file
-    // format is [ResID, flag, X, Y], X is [0, 79], Y is [0, 124]
-    // flags are [0,1,2+] --> [good, noDacTone, failed Beammap]
-
-    FILE *fp;
-    long ret, resid, flag, x, y;
-    long count=0;
-    fp = fopen(BeamFile, "r");
-    printf("%s", BeamFile);
-    printf("%s", BeamFile);
-    do {
-        ret = fscanf(fp,"%ld %ld %ld %ld\n", &resid, &flag, &x, &y);
-        if(ret == 4) {
-            DiskBeamMap[count][0] = resid;
-            DiskBeamMap[count][1] = flag;
-            DiskBeamMap[count][2] = x;
-            DiskBeamMap[count][3] = y;
-            count++;
-        }
-        printf("%d %d %d %d\n", resid, flag, x, y);
-        BeamMap[x][y] = resid;
-        if(flag>1) BeamFlag[x][y] = 2;
-        else BeamFlag[x][y] = flag;
-    } while ( ret == 4);
-    fclose(fp);
-    return(count);
-}
-
 /*
  * Initializes all values of BeamMap to value
  */
@@ -154,7 +125,7 @@ void InitializeBeamMap(uint32_t **BeamMap, uint32_t value, uint32_t beamCols, ui
 
 void ParseToMem(char *packet, uint64_t l, int tsOffs, int FirstFile, int iFile, int nFiles, uint32_t **BeamMap,
                 uint32_t **BeamFlag, int mapflag, char ***ResIdString, photon ***ptable, uint32_t **ptablect, uint32_t
-                beamCols, uint32_t beamRows) {
+                beamCols, uint32_t beamRows, int verbose) {
     uint64_t i,swp,swp1;
     int64_t basetime;
     struct hdrpacket *hdr;
@@ -166,8 +137,14 @@ void ParseToMem(char *packet, uint64_t l, int tsOffs, int FirstFile, int iFile, 
     swp1 = __bswap_64(swp);
     hdr = (struct hdrpacket *) (&swp1);
     if (hdr->start != 0b11111111) {
-        printf("Error - packet does not start with a correctly formatted header packet!\n");
+        if(verbose >= 1){
+            printf("Error - packet does not start with a correctly formatted header packet!\n");
+
+        }
+
         return;
+
+        
     }
 
     // if no start timestamp, store start timestamp
@@ -209,7 +186,7 @@ void ParseToMem(char *packet, uint64_t l, int tsOffs, int FirstFile, int iFile, 
 
 long extract_photons(const char *binpath, unsigned long start_timestamp, unsigned long integration_time,
                      long *DiskBeamMap, int n_bm_entries, unsigned int bmap_ncol, unsigned int bmap_nrow,
-                     unsigned long n_max_photons, photon* otable) {
+                     unsigned long n_max_photons, photon* otable, int verbose) {
 
 
     char fName[STR_SIZE]; //TODO this should be a malloc based on the length of binpath to prevent possibile segfault
@@ -233,7 +210,6 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
     photon ***ptable;
     uint32_t **ptablect;
     uint64_t *data;
-    //long DiskBeamMapLen;
     const unsigned long DATA_BUFFER_SIZE_BYTES = 1.1*MAX_CNT_RATE*bmap_ncol*bmap_nrow*8;
     int checkExists;
     int nBMEntries;
@@ -262,7 +238,8 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
     closedir(dir);
 
     // check nFiles
-    printf("nFiles = %d\n", nFiles); fflush(stdout);
+    if(verbose >= 2){
+        printf("nFiles = %d\n", nFiles); fflush(stdout);}
     if(nFiles < 1 || nFiles > 1800) return -1; // limiting number of files to 30 minutes
 
 
@@ -275,7 +252,8 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
     tsOffs = timegm(yearStartTime);
     tstart = (uint64_t)(FirstFile-tsOffs)*2000;
 
-    printf("Start time = %ld\n",tstart); fflush(stdout);
+    if(verbose >= 2){
+        printf("Start time = %ld\n",tstart); fflush(stdout);}
 
     //initialize nRoaches
     nRoaches = beamRows*beamCols/1000;
@@ -290,10 +268,10 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
     ResIdString = (char***)malloc(beamCols * sizeof(char**));
     toWriteBeamMap = (uint32_t*)malloc(beamCols * beamRows * sizeof(uint32_t));
     toWriteBeamFlag = (uint32_t*)malloc(beamCols * beamRows * sizeof(uint32_t));
-    //DiskBeamMap = (long **)malloc(beamCols * beamRows * sizeof(long*));
     data = (uint64_t *) malloc(DATA_BUFFER_SIZE_BYTES);
 
-    printf("Allocated flag maps.\n"); fflush(stdout);
+    if(verbose >= 3){
+        printf("Allocated flag maps.\n"); fflush(stdout);}
 
     for(i=0; i<beamCols; i++) {
         BeamMap[i] = (uint32_t*)malloc(beamRows * sizeof(uint32_t));
@@ -304,26 +282,25 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
         for(j=0; j<beamRows; j++) ResIdString[i][j] = (char*)malloc(20 * sizeof(char));
     }
 
-    //for(i=0; i<beamCols*beamRows; i++) DiskBeamMap[i] = (long *)calloc(4, sizeof(long));
-
-    printf("Allocated ptable.\n"); fflush(stdout);
+    if(verbose >= 3){
+        printf("Allocated ptable.\n"); fflush(stdout);}
 
 
     // Read in beam map and parse it make 2D beam map and flag arrays
     InitializeBeamMap(BeamMap, beamMapInitVal, beamCols, beamRows); //initialize to out of bounds resID
     InitializeBeamMap(BeamFlag, 1, beamCols, beamRows); //initialize flag to one
-//    printf(BeamMap); fflush(stdout);
-    //DiskBeamMapLen=ParseBeamMapFile(beammap_file,BeamMap,BeamFlag,DiskBeamMap);
     PopulateBeamMapImage(DiskBeamMap, BeamMap, BeamFlag, nBMEntries, beamCols, beamRows);
 
     for(i=0; i < beamCols; i++) {
 		for(j=0; j < beamRows; j++) {
 			if( BeamMap[i][j] == 0 ) {
-                printf("ResID 0 at (%d,%d)\n", i, j); fflush(stdout);
+                if(verbose >= 3){
+                    printf("ResID 0 at (%d,%d)\n", i, j); fflush(stdout);}
             }
 
             if(BeamMap[i][j] == beamMapInitVal) {
-                printf("ResID N/A at (%d,%d)\n", i, j); fflush(stdout);
+                if(verbose >= 3){
+                    printf("ResID N/A at (%d,%d)\n", i, j); fflush(stdout);}
                 continue;
             }
 
@@ -340,8 +317,11 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
         }
     }
 
-    printf("\nParsed beam map.\n"); fflush(stdout);
-	printf("Made individual photon data tables.\n"); fflush(stdout);
+    if(verbose >= 3){
+        printf("\nParsed beam map.\n"); fflush(stdout);
+	    printf("Made individual photon data tables.\n"); fflush(stdout);
+
+    }
 
     // Loop through the data files and parse the packets into separate data tables
 
@@ -349,25 +329,35 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
         sprintf(fName,"%s/%ld.bin",binpath,FirstFile+i);
         checkExists = stat(fName, &st);
         if(checkExists != 0){
-            printf("Warning: %s does not exist\n", fName);
-            fflush(stdout);
+            if(verbose >= 1){
+                printf("Warning: %s does not exist\n", fName);
+                fflush(stdout);
+
+            }
             continue;
         }
 
         fSize = st.st_size;
 
-        printf("Reading %s - %ld Mb\n",fName,fSize/1024/1024);
-        fflush(stdout);
-        if (DATA_BUFFER_SIZE_BYTES<fSize) {
-            printf("Bin file too large for buffer, did the max counts increase from 2500 cts/s\n");
+        if(verbose >= 2){
+            printf("Reading %s - %ld Mb\n",fName,fSize/1024/1024);
             fflush(stdout);
+
+        }
+
+        if (DATA_BUFFER_SIZE_BYTES<fSize) {
+            if(verbose >= 1){
+                printf("Bin file too large for buffer, did the max counts increase from 2500 cts/s\n");
+                fflush(stdout);
+
+            }
             //TODO free all the crap
             return -1;
         }
 
         fp = fopen(fName, "rb");
         rd = fread(data, 1, fSize, fp);
-        if( rd != fSize) {printf("Didn't read the entire file %s\n",fName); fflush(stdout);}
+        if((rd != fSize) && (verbose >= 1)) {printf("Didn't read the entire file %s\n",fName); fflush(stdout);}
         fclose(fp);
 
         // parse the data into photon tables in memory
@@ -378,7 +368,7 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
             if (hdr->start == 0b11111111) {
                 firstHeader = j;
                 pstart = j;
-                if( firstHeader != 0 ) { printf("First header at %ld\n",firstHeader); fflush(stdout);}
+                if((firstHeader != 0) && (verbose >= 2)) { printf("First header at %ld\n",firstHeader); fflush(stdout);}
                 break;
             }
         }
@@ -391,11 +381,11 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
 
             if (hdr->start == 0b11111111) {        // found new packet header!
                 //fill packet and parse
-                if( k*8 - pstart > 816 ) { printf("Packet too long - %ld bytes\n",k*8 - pstart); fflush(stdout);}
+                if((k*8 - pstart > 816) && (verbose >= 1)) { printf("Packet too long - %ld bytes\n",k*8 - pstart); fflush(stdout);}
                 memmove(packet, &data[pstart/8], k*8 - pstart);
                 pcount++;
                 // add to HDF5 file
-     	        ParseToMem(packet,k*8-pstart,tsOffs,FirstFile,i,nFiles,BeamMap,BeamFlag,mapflag,ResIdString,ptable,ptablect,beamCols,beamRows);
+     	        ParseToMem(packet,k*8-pstart,tsOffs,FirstFile,i,nFiles,BeamMap,BeamFlag,mapflag,ResIdString,ptable,ptablect,beamCols,beamRows,verbose);
 		        pstart = k*8;   // move start location for next packet
 		        //if( pcount%1000 == 0 ) { printf("."); fflush(stdout);}
             }
@@ -405,14 +395,19 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
     diff = clock()-start;
     olddiff = diff;
 
-    printf("Read and parsed data in memory in %f s.\n",(float)diff/CLOCKS_PER_SEC);  fflush(stdout);
-    printf("BM0 %d\n", BeamMap[0][0]);
+    if(verbose >= 2){
+        printf("Read and parsed data in memory in %f s.\n",(float)diff/CLOCKS_PER_SEC);  fflush(stdout);
+
+    }
 
     nPhot=0;
     for(j=0; j < nBMEntries; j++) {
         x = DiskBeamMap[NBMFIELD*j + 2];
         y = DiskBeamMap[NBMFIELD*j + 3];
-        printf("memcpy %d: %d %d\n", j, x, y); fflush(stdout);
+        if(verbose >= 3){
+            printf("memcpy %d: %d %d\n", j, x, y); fflush(stdout);
+
+        }
         if(x==0 && y==0) continue;
         if(x >= beamCols || y >= beamRows) continue;
         if( BeamMap[x][y] == beamMapInitVal ) continue;
@@ -421,22 +416,36 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
         nPhot +=  ptablect[x][y];
 	}
 
-	printf("Memcopy done.\n"); fflush(stdout);
+    if(verbose >= 3){
+	    printf("Memcopy done.\n"); fflush(stdout);
+
+    }
 
 	// free photon tables for every resid
     for(i=0; i < beamCols; i++) {
 		for(j=0; j < beamRows; j++) {
 			if( BeamMap[i][j] == 0 ) continue;
-            printf("freeing %d %d\n", i, j); fflush(stdout);
+            if(verbose >= 3){
+                printf("freeing %d %d\n", i, j); fflush(stdout);
+
+            }
+ 
 			free(ptable[i][j]);
 		}
 	}
-	printf("Done freeing beammap.\n"); fflush(stdout);
+
+    if(verbose >= 3){
+	    printf("Done freeing beammap.\n"); fflush(stdout);
+
+    }
 
 
     diff = clock()-start;
-    printf("Parsed %ld photons in %f seconds: %9.1f kphotons/sec.\n",nPhot,((float)diff)/CLOCKS_PER_SEC,
-        ((float)nPhot)/((float)(diff)/CLOCKS_PER_SEC)/1000); fflush(stdout);
+    if(verbose >= 2){
+        printf("Parsed %ld photons in %f seconds: %9.1f kphotons/sec.\n",nPhot,((float)diff)/CLOCKS_PER_SEC,
+            ((float)nPhot)/((float)(diff)/CLOCKS_PER_SEC)/1000); fflush(stdout);
+
+    }
 
     free(data);
 
@@ -449,8 +458,6 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
         free(ResIdString[i]);
     }
 
-    //for(i=0; i<beamCols*beamRows; i++)
-    //    free(DiskBeamMap[i]);
 
     free(BeamMap);
     free(BeamFlag);
