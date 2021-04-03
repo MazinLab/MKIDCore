@@ -110,8 +110,7 @@ class ConfigThing(dict):
         # loader is ruamel.yaml.constructor.RoundTripConstructor
         # node is MappingNode(tag=u'!configdict', value=[(ScalarNode(tag=u'tag:yaml.org,2002:str', value=u'initgui'),
         # cls is ConfigThing
-        d = loader.construct_pairs(node)  #WTH this one line took half a day to get right
-        d = cls( loader.construct_pairs(node))
+        d = cls(loader.construct_pairs(node))
         d._setlock()
         return d
 
