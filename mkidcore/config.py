@@ -84,12 +84,13 @@ class ConfigThing(dict):
     __frozen = False
     REQUIRED_KEYS = tuple()
 
-    def __init__(self, *args, lock=None):
+    def __init__(self, *args, **kwargs):
         """
         If initialized with a list of tuples cannonization is not enforced on values
         in general you should call ConfigThing().registerfromkvlist() as __init__ will not
         break dotted keys out into nested namespaces.
         """
+        lock=kwargs.pop('lock', None)
         if args:
             super(ConfigThing, self).update([(cannonizekey(k), v) for k, v in args[0]])
         self._lock = RLock() if lock is None else lock
@@ -340,7 +341,7 @@ class ConfigThing(dict):
             getLogger(__name__).debug('registered {}.{}={}'.format(k1, krest, initialvalue))
         else:
             if isinstance(initialvalue, ConfigThing):
-                getLogger(__name__).debug(f'Updating lock for key {key}')
+                getLogger(__name__).debug('Updating lock for key {}'.format(key))
                 initialvalue._setlock(lock=self._lock)
 
             self[k1] = initialvalue

@@ -62,9 +62,9 @@ class FlagSet(object):
 
         def notify(f):
             if unknown[0] == 'w':
-                getLogger(__name__).warning(f'Flag {f} not in flag set, excluded from bitmask')
+                getLogger(__name__).warning('Flag {} not in flag set, excluded from bitmask'.format(f))
             elif unknown[0] == 'e':
-                raise ValueError(f'Flag {f} not in flag set')
+                raise ValueError('Flag {} not in flag set'.format(f))
             return 0
 
         return np.bitwise_or.reduce([2 ** self.flags[f].bit if f in self.flags else notify(f) for f in flags])
