@@ -50,7 +50,7 @@ INSTRUMENT_INFO = {'mec': dict(deadtime_us=10, energy_bin_width_ev=0.01, minimum
 
 
 class InstrumentInfo(mkidcore.config.ConfigThing):
-    yaml_tag = u'!inst_nfo'
+    yaml_tag = u'!InstrumentInfo'
 
     def __init__(self, *args, **kwargs):
         if len(args) == 1 and isinstance(args[0], str):
@@ -68,7 +68,10 @@ class InstrumentInfo(mkidcore.config.ConfigThing):
     @classmethod
     def to_yaml(cls, representer, node):
         x = {k: v for k, v in node.items()}
-        x['nominal_platescale_mas'] = float(x['nominal_platescale_mas'].value)
+        try:
+            x['nominal_platescale_mas'] = float(x['nominal_platescale_mas'].value)
+        except:
+            x['nominal_platescale_mas'] = float(x['nominal_platescale_mas'])
         return representer.represent_mapping(cls.yaml_tag, x)
 
     @classmethod

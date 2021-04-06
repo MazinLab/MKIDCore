@@ -90,7 +90,7 @@ class ConfigThing(dict):
         in general you should call ConfigThing().registerfromkvlist() as __init__ will not
         break dotted keys out into nested namespaces.
         """
-        lock=kwargs.pop('lock', None)
+        lock = kwargs.pop('lock', None)
         if args:
             super(ConfigThing, self).update([(cannonizekey(k), v) for k, v in args[0]])
         self._lock = RLock() if lock is None else lock
@@ -98,12 +98,13 @@ class ConfigThing(dict):
 
     @classmethod
     def to_yaml(cls, representer, node):
-        # comments = node.comment_dict()
-        # import ruamel.yaml.comments
-        # d = ruamel.yaml.comments.CommentedMap(node.asdict(keep_internal=False))
-        # for k, v in comments.items():
-        #     d._yaml_add_eol_comment(k, [v])
-        return representer.represent_mapping(cls.yaml_tag, node.asdict(keep_internal=False))
+        import ruamel.yaml.comments
+        cm = ruamel.yaml.comments.CommentedMap(node.asdict(keep_internal=False))
+        for k, v in node.comment_dict().items():
+            cm.yaml_add_eol_comment(v, key=k)
+        return representer.represent_mapping(cls.yaml_tag, cm)
+
+        # return representer.represent_mapping(cls.yaml_tag, node.asdict(keep_internal=False))
 
     @classmethod
     def from_yaml(cls, loader, node):
@@ -187,7 +188,10 @@ class ConfigThing(dict):
         else:
             with self._lock:
                 k1, _, krest = key.partition('.')
-                return self[k1][krest] if krest else self[k1]
+                try:
+                    return self[k1][krest] if krest else self[k1]
+                except KeyError:
+                    raise AttributeError(key)
 
     def __setattr__(self, key, value):
         if self.__frozen and not key.startswith('_'):
