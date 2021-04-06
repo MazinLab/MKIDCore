@@ -33,12 +33,12 @@ class Flag(object):
 class FlagSet(object):
     def __init__(self, flags):
         from collections import defaultdict
-        collision = defaultdict(lambda: set)
+        collision = defaultdict(lambda: set())
         for f in flags:
-            collision[f.bit].update(f)
-            collision[f.name].update(f)
+            collision[f.bit].add(f)
+            collision[f.name].add(f)
         badflags = []
-        for k, v in collision:
+        for k, v in collision.items():
             if len(v) > 1:
                 badflags.append(v)
         if badflags:
@@ -76,12 +76,9 @@ class FlagSet(object):
         #must support arrays
         return True
 
-    def __add__(self, other):
-        pass
-
-    def __sub__(self, other):
-        pass
-
+    def __iter__(self):
+        for f in self.flags.values():
+            yield f
 
 #DO not edit these without considering MKIDReadout!
 BEAMMAP_FLAGS = FlagSet.define(
