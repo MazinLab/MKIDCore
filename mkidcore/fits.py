@@ -14,13 +14,6 @@ ImgTuple = namedtuple('img', ['data', 'file', 'time'])
 _pool = None
 
 
-def addfitshdu(a,b, copy=False):
-    """add the data of two fits hdus together and adjust their headers """
-    if copy:
-        raise NotImplementedError
-    a.header.exptime += b.header.exptime
-    a.data += b.data
-    return a
 
 
 def loadimg(file, ncol, nrow, **kwargs):
