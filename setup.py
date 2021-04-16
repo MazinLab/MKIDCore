@@ -8,10 +8,10 @@ from setuptools.extension import Extension
 from Cython.Build import cythonize
 
 mkidbin_extension = Extension(
-    name="mkidcore.hdf.mkidbin",
-    sources=["mkidcore/hdf/mkidbin.pyx", "mkidcore/hdf/binprocessor.c"],
-    library_dirs=["mkidcore/hdf"],  # Location of .o file
-    include_dirs=["mkidcore/hdf", numpy.get_include()], # Location of the .h file
+    name="mkidcore.binfile.mkidbin",
+    sources=["mkidcore/binfile/mkidbin.pyx", "mkidcore/binfile/binprocessor.c"],
+    library_dirs=["mkidcore/binfile"],  # Location of .o file
+    include_dirs=["mkidcore/binfile", numpy.get_include()], # Location of the .h file
     extra_compile_args=["-std=c99", "-O3", '-pthread']
 )
 
