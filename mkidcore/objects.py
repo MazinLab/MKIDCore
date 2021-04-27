@@ -465,7 +465,7 @@ class Beammap(object):
         return '<file={}, ncols={}, nrows={}, freqpath={}>'.format(self.file, self.ncols, self.nrows, self.freqpath)
 
     def __str__(self):
-        return 'File: "{}"\nWell Mapped: {}'.format(self.file, self.nrows * self.ncols - (self.flags!=0).sum())
+        return 'File: "{}"\n  Well Mapped: {}'.format(self.file, self.nrows * self.ncols - (self.flags!=0).sum())
 
 
 mkidcore.config.yaml.register_class(Beammap)

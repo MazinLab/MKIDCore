@@ -74,6 +74,7 @@ class FlagSet(object):
 
     def valid(self, bitmask, error=True):
         #must support arrays
+        getLogger(__name__).debug('Flag validity not implemented')
         return True
 
     def __iter__(self):

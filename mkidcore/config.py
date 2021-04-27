@@ -191,7 +191,7 @@ class ConfigThing(dict):
                 try:
                     return self[k1][krest] if krest else self[k1]
                 except KeyError:
-                    raise AttributeError(key)
+                    raise AttributeError('{} not found. At this level: {}'.format(key, list(self.keys())))
 
     def __setattr__(self, key, value):
         if self.__frozen and not key.startswith('_'):
