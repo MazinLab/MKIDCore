@@ -53,10 +53,18 @@ class InstrumentInfo(mkidcore.config.ConfigThing):
     yaml_tag = u'!InstrumentInfo'
 
     def __init__(self, *args, **kwargs):
+        default = ''
         if len(args) == 1 and isinstance(args[0], str):
+            default = args[0]
+        try:
+            default = kwargs.pop('default')
+        except KeyError:
+            pass
+
+        if default:
             super().__init__(**kwargs)
             try:
-                for k, v in INSTRUMENT_INFO[args[0].lower()].items():
+                for k, v in INSTRUMENT_INFO[default.lower()].items():
                     if 'nominal_platescale_mas' in k:
                         v *= astropy.units.mas
                     self.register(k, v)
