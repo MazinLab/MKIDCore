@@ -167,7 +167,7 @@ class Beammap(object):
         d = mkidcore.config.extract_from_node(constructor,('file', 'nrows', 'ncols', 'default', 'freqfiles'), node)
 
         if 'default' in d:
-            bmap = cls(default=d['default'])
+            bmap = cls(d['default'])
         else:
             bmap = cls(specifier=d['file'], xydim=(int(d['ncols']), int(d['nrows'])))
 
