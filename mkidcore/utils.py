@@ -37,7 +37,7 @@ def manager(*args, **kwargs):
 
 def getnm(x):
     try:
-        return astropy.units.Unit(x).to('nm')
+        return x.to('nm')
     except astropy.units.UnitConversionError:
         return float(x)
 
