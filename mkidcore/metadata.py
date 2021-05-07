@@ -8,7 +8,10 @@ from astropy.io.fits import Card, Header
 
 from mkidcore.corelog import getLogger
 import mkidcore.config
-
+from astropy.time import Time
+from astropy.time import TimezoneInfo
+import astropy.units as u
+from datetime import datetime
 
 _metadata = {}
 
@@ -336,6 +339,24 @@ def build_header(metadata=None):
 
     raises ValueError if any novel keyword is not a Card
     """
+    if metadata is not None:
+        unix_start = metadata['UNIXSTR']
+        unix_stop = metadata['UNIXEND']
+        TIME_KEYS = ['HST-END', 'HST-STR', 'MJD-END', 'MJD-STR', 'UT-END', 'UT-STR']
+        if not unix_start and not unix_stop:
+            assert [metadata[key] is not None for key in TIME_KEYS], 'header must contain UNIXSTR, UNIXEND or all of {}'.format(TIME_KEYS)
+        else:
+            hst = TimezoneInfo(utc_offset=-10*u.hour)
+            t1 = Time(unix_start, format='unix')
+            t2 = Time(unix_stop, format='unix')
+            dt1 = datetime.fromtimestamp(t1.value, tz=hst)
+            dt2 = datetime.fromtimestamp(t2.value, tz=hst)
+            metadata['HST-END'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt2.hour, dt2.day, dt2.second, dt2.microsecond)
+            metadata['HST-STR'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt1.hour, dt1.day, dt1.second, dt1.microsecond)
+            metadata['MJD-END'] = t2.mjd
+            metadata['MJD-STR'] = t1.mjd
+            metadata['UT-END'] = t2.iso[-12:-1]
+            metadata['UT-STR'] = t1.iso[-12:-1]
 
     novel = set(metadata.keys()).difference(set(DEFAULT_CARDSET.keys()))
     bad = [k for k in novel if not isinstance(metadata[k], Card)]
@@ -373,7 +394,7 @@ def observing_metadata_for_timerange(start, duration, metadata_source=None):
     requires metadata_source be an indexable iterable with an attribute utc pointing to a datetime
     """
     if not metadata_source:
-        metadata_source = load_observing_metadata()
+        metadata_source = load_observing_metadata() #TODO load_observing_metadata requires a path
     # Select the nearest metadata to the midpoint
     start = datetime.fromtimestamp(start)
     time_since_start = np.array([(md.utc - start).total_seconds() for md in metadata_source])
