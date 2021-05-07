@@ -4,8 +4,12 @@ import logging.config
 import os
 import sys
 
-import ruamel.yaml as yaml
+import yaml
 from multiprocessing_logging import install_mp_handler
+try:
+    import coloredlogs
+except ImportError:
+    pass
 
 # import progressbar
 # progressbar.streams.wrap_stderr()
@@ -20,7 +24,10 @@ CRITICAL = logging.CRITICAL
 def getLogger(*args, **kwargs):
     setup = kwargs.pop('setup', False)
     if setup:
-        setup_logging()
+        setup_logging(**kwargs)
+    kwargs.pop('logfile', None)
+    kwargs.pop('configfile',None)
+    kwargs.pop('env_key',None)
     log = logging.getLogger(*args, **kwargs)
     if not setup:
         log.addHandler(logging.NullHandler())
@@ -52,7 +59,7 @@ class MakeFileHandler(logging.FileHandler):
         logging.FileHandler.__init__(self, filename, mode, encoding, delay)
 
 
-def setup_logging(configfile='', env_key='MKID_LOG_CONFIG', logfile=None):
+def setup_logging(configfile='', env_key='MKID_LOG_CONFIG', logfile=None, **kwargs):
     """Setup logging configuration"""
     global _setup
     if _setup:
@@ -67,17 +74,19 @@ def setup_logging(configfile='', env_key='MKID_LOG_CONFIG', logfile=None):
         with open(path, 'r') as f:
             config = yaml.safe_load(f.read())
         if logfile:
-            config['handlers']['file']['filename']=logfile
+            config['handlers']['file']['filename'] = logfile
         logging.config.dictConfig(config)
-
     except:
         logging.basicConfig(level=logging.DEBUG)
         logger = logging.getLogger()
         logger.error('Could not load log config file "{}" failing back to basicConfig'.format(path),
                      exc_info=True)
 
+    try:
+        coloredlogs.install()
+    except NameError:
+        pass
     install_mp_handler()
-
     logging.getLogger('matplotlib').setLevel(logging.INFO)
 
 

@@ -20,7 +20,7 @@ PHOTON_SIZE_BYTES = 6*4
 cdef extern from "binprocessor.h":
     struct photon
     long extract_photons(const char *dname, unsigned long start, unsigned long inttime,
-                     long *DiskBeamMap, int n_bm_entries, unsigned int bmap_ncol, 
+                     long *DiskBeamMap, int n_bm_entries, unsigned int bmap_ncol,
                      unsigned int bmap_nrow, unsigned long n_max_photons, photon* photons, int verbose);
     long extract_photons_dummy(const char *dname, unsigned long start, unsigned long inttime, const char *bmap,
                                unsigned int x, unsigned int y, unsigned long n_max_photons, photon* photons)
@@ -54,7 +54,7 @@ def extract(directory, start, inttime, beammap, x, y, include_baseline=False, ve
 
     baselines = photons['baseline']
     baseline_median = np.median(baselines)
-    print('BL median is ' + str(baseline_median))
+    getLogger(__name__).debug('BL median is ' + str(baseline_median))
     photons2 = np.zeros(nphotons, dtype=np_photon)
     photons2['Wavelength'] = (photons['wvl'] + photons['baseline']) - baseline_median if not include_baseline else photons['wvl']
     photons2['ResID'] = photons['resID']
@@ -142,7 +142,7 @@ def parse(file,_n=0):
                  <unsigned int*>np.PyArray_DATA(y),
                  <unsigned int*>np.PyArray_DATA(x),
                  <unsigned int*>np.PyArray_DATA(roachnum))
-    #print("number of parsed photons = {}".format(npackets))
+    getLogger(__name__).debug("number of parsed photons = {}".format(npackets))
 
     if npackets>n:
         return parse(file,abs(npackets))
@@ -168,4 +168,3 @@ def parse(file,_n=0):
     ret = p[p.x != 511]
 
     return ret
-

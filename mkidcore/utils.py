@@ -29,17 +29,11 @@ def parse_ditherlog(file):
 
 
 def manager(*args, **kwargs):
+    """Get a singleton of the multiprocessing manager"""
     global _manager
     if _manager is None:
         _manager = mp.Manager(*args, **kwargs)
     return _manager
-
-
-def getnm(x):
-    try:
-        return x.to('nm')
-    except astropy.units.UnitConversionError:
-        return float(x)
 
 
 def query(question, yes_or_no=False, default="no"):
