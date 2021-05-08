@@ -87,7 +87,7 @@ void FixOverflowTimestamps(struct hdrpacket* hdr, int fileNameTime, int tsOffs) 
     hdr->timestamp += 2000*nWraps*1048576;
 }
 
-int PopulateBeamMapImage(long *DiskBeamMap, uint32_t **BeamMap, uint32_t **BeamFlag, 
+int PopulateBeamMapImage(long *DiskBeamMap, uint32_t **BeamMap, uint32_t **BeamFlag,
         int nBMEntries, int beamCols, int beamRows){
     int i, x, y, resID, flag;
     //printf("Using new MKB!");
@@ -102,9 +102,9 @@ int PopulateBeamMapImage(long *DiskBeamMap, uint32_t **BeamMap, uint32_t **BeamF
             continue;
 
         BeamMap[x][y] = resID;
-        if(flag>1) 
+        if(flag>1)
             BeamFlag[x][y] = 2;
-        else 
+        else
             BeamFlag[x][y] = flag;
 
     }
@@ -144,7 +144,7 @@ void ParseToMem(char *packet, uint64_t l, int tsOffs, int FirstFile, int iFile, 
 
         return;
 
-        
+
     }
 
     // if no start timestamp, store start timestamp
@@ -173,10 +173,9 @@ void ParseToMem(char *packet, uint64_t l, int tsOffs, int FirstFile, int iFile, 
 
 		// add the photon to ptable and increment the appropriate counter
         ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].resID = BeamMap[data->xcoord][data->ycoord];
-		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].timestamp = (uint32_t) (basetime*500 + data->timestamp);
-		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].wvl = ((float) data->wvl)*RAD2DEG/32768.0;
-		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].wSpec = 1.0;
-		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].wNoise = 1.0;
+		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].time = (uint32_t) (basetime*500 + data->timestamp);
+		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].wavelength = ((float) data->wvl)*RAD2DEG/32768.0;
+//		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].weight = 1.0;
 		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].baseline = ((float) data->baseline)*RAD2DEG/16384.0;
 		ptablect[data->xcoord][data->ycoord]++;
     }
@@ -429,7 +428,7 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
                 printf("freeing %d %d\n", i, j); fflush(stdout);
 
             }
- 
+
 			free(ptable[i][j]);
 		}
 	}
@@ -489,34 +488,25 @@ long extract_photons_dummy(const char *binpath, unsigned long start_timestamp, u
            binpath, start_timestamp, integration_time, beammap_file, bmap_ncol, bmap_nrow, n_max_photons);
     fflush(stdout);
     for (i=0;i<5;i++) {
-        printf("photon %ld, %ld, %f, %f, %f\n", otable[i].resID, otable[i].timestamp, otable[i].wvl, otable[i].wSpec,
-               otable[i].wNoise);
+        printf("photon %ld, %ld, %f\n", otable[i].resID, otable[i].time, otable[i].wavelength);
         fflush(stdout);
         otable[i].resID=12;
-        otable[i].timestamp=13;
-        otable[i].wvl=-1.0;
-        otable[i].wSpec=-2.0;
-        otable[i].wNoise=-3.0;
+        otable[i].time=13;
+        otable[i].wavelength=-1.0;
     }
 
     photon morephotons[3];
     morephotons[0].resID=20;
-    morephotons[0].timestamp=21;
-    morephotons[0].wvl=-10.;
-    morephotons[0].wSpec=-10.;
-    morephotons[0].wNoise=-10.0;
+    morephotons[0].time=21;
+    morephotons[0].wavelength=-10.;
 
     morephotons[1].resID=20;
-    morephotons[1].timestamp=22;
-    morephotons[1].wvl=-10.;
-    morephotons[1].wSpec=-12.;
-    morephotons[1].wNoise=-10.0;
+    morephotons[1].time=22;
+    morephotons[1].wavelength=-10.;
 
     morephotons[2].resID=20;
-    morephotons[2].timestamp=24;
-    morephotons[2].wvl=-10.;
-    morephotons[2].wSpec=-13.;
-    morephotons[2].wNoise=-10.0;
+    morephotons[2].time=24;
+    morephotons[2].wavelength=-10.;
 
     memcpy(&otable[5], morephotons, 3 * sizeof(photon));
 
@@ -526,7 +516,7 @@ long extract_photons_dummy(const char *binpath, unsigned long start_timestamp, u
 
 
 long cparsebin(const char *fName, unsigned long max_len,
-                       float* baseline, float* wavelength, unsigned long long* timestamp,
+                       float* baseline, float* wavelength, unsigned long long* time,
                        unsigned int* ycoord, unsigned int* xcoord, unsigned int* roach) {
     /*
     The function returns the number of packet in the file. If the file turns out to have more packets than max_len,
@@ -585,18 +575,16 @@ long cparsebin(const char *fName, unsigned long max_len,
 		    out_i = pcount >= max_len ? max_len: pcount;
 			photondata = (struct datapacket *) (&swp1);
 			baseline[out_i] = ((float) photondata->baseline)*RAD2DEG/16384.0;
-			wavelength[out_i] = ((float) photondata->wvl)*RAD2DEG/32768.0;
-            //printf("photon timestamp %u\n", photondata->timestamp); 
-			timestamp[out_i] = photondata->timestamp + curtime; // units are microseconds elapsed from beginning of year.
+			wavelength[out_i] = ((float) photondata->wavelength)*RAD2DEG/32768.0;
+            //printf("photon timestamp %u\n", photondata->timestamp);
+			time[out_i] = photondata->times + curtime; // units are microseconds elapsed from beginning of year.
 			ycoord[out_i] = photondata->ycoord;
 			xcoord[out_i] = photondata->xcoord;
 			roach[out_i] = curroach;
-			//wavelength[out_i] = wavelength[out_i]*RAD2DEG/32768.0;
 			pcount++;
 		}
 
 	}
-    //wavelength = ((float) data->wvl)*RAD2DEG/32768.0;
     //close up file
 	free(data);
 

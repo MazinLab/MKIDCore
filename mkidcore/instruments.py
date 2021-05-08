@@ -14,8 +14,8 @@ FEEDLINE_INFO = {'mec': MEC_FEEDLINE_INFO, 'darkness':DARKNESS_FEEDLINE_INFO}
 DEFAULT_ARRAY_SIZES = {'mec': (140, 146), 'darkness': (80, 125)}
 
 
-MEC_NUM_FL_MAP = {228: '1a', 229: '1b', 238: '5a', 239: '5b', 220: '6a', 221: '6b', 
-                  222: '7a', 223: '7b', 232: '8a', 233: '8b', 
+MEC_NUM_FL_MAP = {228: '1a', 229: '1b', 238: '5a', 239: '5b', 220: '6a', 221: '6b',
+                  222: '7a', 223: '7b', 232: '8a', 233: '8b',
                   236: '9a', 237: '9b', 224: '10a', 225: '10b'}
 
 #NB FLs are arbitrary as instrument isn't installed
@@ -43,10 +43,10 @@ for k in list(ROACHESA):
 for k in list(ROACHESB):
     ROACHESB[k.upper()] = ROACHESB[k]
 
-INSTRUMENT_INFO = {'mec': dict(deadtime_us=10, energy_bin_width_ev=0.01, minimum_wavelength=800,
-                               maximum_wavelength=1400, nominal_platescale_mas=10.4),
-                   'darkness': dict(deadtime_us=10, energy_bin_width_ev=0.01, minimum_wavelength=800,
-                                    maximum_wavelength=1400, nominal_platescale_mas=10.4)}
+INSTRUMENT_INFO = {'mec': dict(deadtime_us=10, energy_bin_width_ev=0.1, minimum_wavelength=700,
+                               maximum_wavelength=1500, nominal_platescale_mas=10.4),
+                   'darkness': dict(deadtime_us=10, energy_bin_width_ev=0.1, minimum_wavelength=700,
+                                    maximum_wavelength=1500, nominal_platescale_mas=10.4)}
 
 
 class InstrumentInfo(mkidcore.config.ConfigThing):
@@ -132,7 +132,7 @@ def CONEX2PIXEL(xCon, yCon):
 
     def func(x, slope, intercept):
         return x * slope + intercept
-    # 
+    #
     #
     # xopt, xcov = curve_fit(func, xConFit, xPosFit)
     # yopt, ycov = curve_fit(func, yConFit, yPosFit)
