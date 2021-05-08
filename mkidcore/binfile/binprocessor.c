@@ -63,7 +63,7 @@
 
 struct datapacket {
     int baseline:17;
-    int wvl:18;
+    int wavelength:18;
     unsigned int timestamp:9;
     unsigned int ycoord:10;
     unsigned int xcoord:10;
@@ -174,8 +174,7 @@ void ParseToMem(char *packet, uint64_t l, int tsOffs, int FirstFile, int iFile, 
 		// add the photon to ptable and increment the appropriate counter
         ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].resID = BeamMap[data->xcoord][data->ycoord];
 		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].time = (uint32_t) (basetime*500 + data->timestamp);
-		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].wavelength = ((float) data->wvl)*RAD2DEG/32768.0;
-//		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].weight = 1.0;
+		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].wavelength = ((float) data->wavelength)*RAD2DEG/32768.0;
 		ptable[data->xcoord][data->ycoord][ptablect[data->xcoord][data->ycoord]].baseline = ((float) data->baseline)*RAD2DEG/16384.0;
 		ptablect[data->xcoord][data->ycoord]++;
     }
@@ -577,7 +576,7 @@ long cparsebin(const char *fName, unsigned long max_len,
 			baseline[out_i] = ((float) photondata->baseline)*RAD2DEG/16384.0;
 			wavelength[out_i] = ((float) photondata->wavelength)*RAD2DEG/32768.0;
             //printf("photon timestamp %u\n", photondata->timestamp);
-			time[out_i] = photondata->times + curtime; // units are microseconds elapsed from beginning of year.
+			time[out_i] = photondata->timestamp + curtime; // units are microseconds elapsed from beginning of year.
 			ycoord[out_i] = photondata->ycoord;
 			xcoord[out_i] = photondata->xcoord;
 			roach[out_i] = curroach;

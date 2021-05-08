@@ -63,7 +63,7 @@ def fix_timestamp_bug(file):
             continue
         resIDInd = resIDInd0[0]
         photonList_resID = photonList[resIDBoundaryInds[resIDInd]:resIDBoundaryInds[resIDInd + 1]]
-        timeList = photonList_resID['Time']
+        timeList = photonList_resID['time']
         timestamps = np.array(timeList, dtype=np.int64)  # convert timestamps to signed values
         repeatTest = np.array(np.where(timestamps == timestamps[0]))
         if len(repeatTest[0]) > 1:
@@ -77,6 +77,6 @@ def fix_timestamp_bug(file):
 
     assert len(photonList) == len(correctedTimeListMaster), 'Timestamp list does not match length of photon list!'
     assert correctedTimeListMaster.ndim == 1, 'correctedTimeListMaster is not flat'
-    photonTable.modify_column(column=correctedTimeListMaster, colname='Time')
+    photonTable.modify_column(column=correctedTimeListMaster, colname='time')
     photonTable.flush()
     hfile.close()
