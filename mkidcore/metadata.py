@@ -4,17 +4,77 @@ import copy
 import os
 from glob import glob
 import json
-from astropy.io.fits import Card, Header
+import pkg_resources as pkg
+import csv
+from bisect import bisect
+from collections import defaultdict
 
-from mkidcore.corelog import getLogger
-import mkidcore.config
+from astropy.io.fits import Card, Header
 from astropy.time import Time
 from astropy.time import TimezoneInfo
 import astropy.units as u
-from datetime import datetime
-import pkg_resources as pkg
 
-_metadata = {}
+from mkidcore.corelog import getLogger
+import mkidcore.config
+
+
+
+_FITS_STD = ('BSCALE','BUNIT','BZERO','CDELT','CRPIX','CRVAL','CTYPE','CUNIT','PC')
+
+_LEGACY_OBSLOG_MAP= {"comment": "comment", "el": "ALTITUDE", "equinox": "EQUINOX", "utctcs": "UT", "az": "AZIMUTH",
+                    "instrument": "INSTRUME", "device_orientation": "M_DEVANG", "ra": "RA", "airmass": "AIRMASS",
+                    "dither_pos": ("M_CONEXX", "M_CONEXY"), "dither_ref": ("M_CXREFX", "M_CXREFY"), "parallactic": None,
+                    "ha": None, "utc": "UTC-STR", "observatory": "OBSERVAT", "laser": None, "target": "OBJECT",
+                    "filter": "M_FLTPOS", "dither_home": ("M_PREFX", "M_PREFY"), "platescale": "M_PLTSCL",
+                    "flipper": "M_FLPPOS", "dec": "DEC"}
+
+
+class MetadataSeries(object):
+    def __init__(self, times=None, values=None):
+        if bool(times) ^ bool(values):
+            raise ValueError("Either both or neither times and values must be passed")
+        self.times = list(times) if times else []
+        self.values = list(values) if values else []
+
+    def add(self, time, value):
+        """Caution Will happily add duplicate times"""
+        ndx = bisect(self.times, time)
+        print(f"insert {time} into {self.times} at {ndx}")
+        self.times.insert(ndx, time)
+        self.values.insert(ndx, value)
+
+    def __iadd__(self, other):
+        if not other.times:
+            return
+        if not self.times:
+            self.times.extend(other.times)
+            self.values.extend(other.values)
+        if max(other.times) <= min(self.times):
+            self.times[0:0] = other.times
+            self.values[0:0] = other.values
+        elif min(other.times) >= max(self.times):
+            self.times.extend(other.times)
+            self.values.extend(other.values)
+        else:
+            self.times.extend(other.times)
+            self.values.extend(other.values)
+            self.times, self.values = zip(*sorted(zip(self.times, self.values)))
+
+    def get(self, timestamp, preceeding=True):
+        if timestamp is None:
+            return self.values[0]
+
+        delta = np.asarray(self.times) - timestamp
+        try:
+            return np.asarray(self.values)[delta < 0][-1] if preceeding else self.values[np.abs(delta).argmin()]
+        except IndexError:
+            raise ValueError(f'No metadata available for {timestamp}, records from '
+                             f'{min(self.times)} to {max(self.times)}')
+
+    def range(self, time, duration):
+        t = np.asarray(self.times)
+        use = (t>=time) & (t<=time+duration)
+        return MetadataSeries(t[use], np.asarray(self.values)[use])
 
 
 class KeyInfo(object):
@@ -26,8 +86,8 @@ class KeyInfo(object):
     def fits_card(self):
         return Card(keyword=self.name, value=self.default, comment=self.description)
 
-import csv
-def parse_mec_keys():
+
+def _parse_mec_keys():
     with open(pkg.resource_filename('mkidcore','mec_keys.csv')) as f:
         data = [row for row in csv.reader(f)]
 
@@ -44,11 +104,87 @@ def parse_mec_keys():
         k['has_source'] = int(k['has_source'])
         k['fits_card'] = k['fits_card'].upper()
 
-    return {k['fits_card']: KeyInfo(**k) for k in data}
+    return {k['fits_card']: KeyInfo(**k) for k in data if k['fits_card'] not in _FITS_STD}
 
-MEC_KEY_INFO = parse_mec_keys()
 
+MEC_KEY_INFO = _parse_mec_keys()
 DEFAULT_CARDSET = {k: v.fits_card for k,v in MEC_KEY_INFO.items()}
+_metadata = {'files': [], 'data': defaultdict(MetadataSeries)}
+
+
+def parse_legacy_obslog(file):
+    """
+    file consists of a series of dicts in time. Translate them into a series of K:V sets in time with k a subset of
+    modern keys
+    """
+    with open(file, 'r') as f:
+        lines = f.readlines()
+
+    dat = {kk: MetadataSeries() for k in _LEGACY_OBSLOG_MAP.values() if k for kk in (k if isinstance(k,tuple) else [k])}
+    for l in lines:
+        ldict = json.loads(l)
+        utc = datetime.strptime(ldict['utc'], "%Y%m%d%H%M%S")
+        for k in ldict:
+            newkey = _LEGACY_OBSLOG_MAP[k]
+            if not newkey:
+                continue
+            newkeys = newkey if isinstance(newkey, tuple) else [newkey]
+            values = ldict[k] if isinstance(newkey, tuple) else [ldict[k]]
+            for kk, vv in zip(newkeys, values):
+                dat[kk].add(utc.timestamp(), vv)
+
+    return dat
+
+
+def load_observing_metadata(path, files=tuple(), use_cache=True):
+    """Return a list of mkidcore.config.ConfigThings with the contents of the metadata from observing log files"""
+    global _metadata
+
+    # _metadata is a dict of file: parsed_file records
+    files = set(files)
+    if path:
+        files.update(glob(os.path.join(path, 'obslog*.json')))
+
+    if use_cache:
+        md = _metadata['data']
+        parsed = _metadata['files']
+    else:
+        md = defaultdict(MetadataSeries)
+        parsed = []
+
+    for f in files:
+        if f not in parsed:
+            recs = parse_legacy_obslog(f)
+            for k, v in recs.items():
+                md[k] += v
+            parsed.append(f)
+
+    return md
+
+
+def validate_metadata_dict(md, warn=True, error=False):
+    missing = []
+    for k in DEFAULT_CARDSET:
+        if k not in md:
+            missing.append(k)
+    if warn and missing:
+        getLogger(__name__).warning('Key(s) {} missing from {}'.format(str(missing), md))
+    if error and missing:
+        raise KeyError('Missing keys: {}'.format(str(missing)))
+
+    return len(missing) != 0
+
+
+def observing_metadata_for_timerange(start, duration, metadata_source=None):
+    """
+    Metadata that goes into an H5 consists of records within the duration
+
+    requires metadata_source be an indexable iterable with an attribute utc pointing to a datetime
+    """
+    if isinstance(metadata_source, str):
+        metadata_source = load_observing_metadata(metadata_source)
+
+    return {k: v.range(start, duration) for k, v in metadata_source.items()}
 
 
 def build_header(metadata=None):
@@ -93,89 +229,6 @@ def build_header(metadata=None):
 
     return Header(cardset.values())
 
-
-def validate_metadata_dict(md, warn=True, error=False):
-    missing = []
-    for k in DEFAULT_CARDSET:
-        if k not in md:
-            missing.append(k)
-    if warn and missing:
-        getLogger(__name__).warning('Key(s) {} missing from {}'.format(str(missing), md))
-    if error and missing:
-        raise KeyError('Missing keys: {}'.format(str(missing)))
-
-    return len(missing) != 0
-
-
-def observing_metadata_for_timerange(start, duration, metadata_source=None):
-    """
-    Metadata that goes into an H5 consists of records within the duration
-
-    requires metadata_source be an indexable iterable with an attribute utc pointing to a datetime
-    """
-    if not metadata_source:
-        metadata_source = load_observing_metadata() #TODO load_observing_metadata requires a path
-    # Select the nearest metadata to the midpoint
-    start = datetime.fromtimestamp(start)
-    time_since_start = np.array([(md.utc - start).total_seconds() for md in metadata_source])
-    ok, = np.where((time_since_start < duration.duration) & (time_since_start >= 0))
-    mdl = [metadata_source[i] for i in ok]
-    for k in DEFAULT_CARDSET:
-        {k:v if k.static else }
-    return mdl
-
-
-def parse_obslog(file):
-    """Return a list of configthings for each record in the observing log filterable on the .utc attribute"""
-    with open(file, 'r') as f:
-        lines = f.readlines()
-    ret = []
-    for l in lines:
-        ct = mkidcore.config.ConfigThing(json.loads(l).items())
-        ct.register('utc', datetime.strptime(ct.utc, "%Y%m%d%H%M%S"), update=True)
-        ret.append(ct)
-    return ret
-
-
-def load_observing_metadata(path, files=tuple(), use_cache=True):
-    """Return a list of mkidcore.config.ConfigThings with the contents of the metadata from observing log files"""
-    global _metadata
-
-    # _metadata is a dict of file: parsed_file records
-    files = set(files)
-    if path:
-        files.update(glob(os.path.join(path, 'obslog*.json')))
-
-    if use_cache:
-        for f in files:
-            if f not in _metadata:
-                _metadata[f] = parse_obslog(f)
-        metad = _metadata
-    else:
-        metad = {f: parse_obslog(f) for f in files}
-
-    metadata = []
-    for f in files:
-        metadata += metad[f]
-
-    return metadata
-
-
-class MetadataSeries(object):
-    def __init__(self, times, values):
-        self.times = times
-        self.values = values
-
-    def get(self, timestamp, preceeding=True):
-        if timestamp is None:
-            return self.values[0]
-
-        delta = self.times - timestamp
-        try:
-            return self.values[delta < 0][-1] if preceeding else self.values[np.abs(delta).argmin()]
-        except IndexError:
-            raise ValueError(f'No metadata available for {timestamp}, records from '
-                             f'{self.values.min()} to {self.values.max()}')
 
 
 def build_wcs(md, times, ref_pixels, derotate=True, naxis=2):
