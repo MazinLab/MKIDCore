@@ -37,13 +37,17 @@ class MetadataSeries(object):
         self.values = list(values) if values else []
 
     def add(self, time, value):
-        """Caution Will happily add duplicate times"""
+        """Caution will happily overwrite duplicate times"""
         ndx = bisect(self.times, time)
-        print(f"insert {time} into {self.times} at {ndx}")
-        self.times.insert(ndx, time)
-        self.values.insert(ndx, value)
+        if ndx != 0 and self.times[ndx-1] == time:
+            getLogger(__name__).debug(f"Replacing {self.values[ndx]} with {value} at {time}")
+            self.values[ndx] = value
+        else:
+            self.times.insert(ndx, time)
+            self.values.insert(ndx, value)
 
     def __iadd__(self, other):
+        """ Replaces any existing times"""
         if not other.times:
             return
         if not self.times:
@@ -56,9 +60,9 @@ class MetadataSeries(object):
             self.times.extend(other.times)
             self.values.extend(other.values)
         else:
-            self.times.extend(other.times)
-            self.values.extend(other.values)
-            self.times, self.values = zip(*sorted(zip(self.times, self.values)))
+            cur = {k: v for k, v in zip(self.times, self.values)}
+            cur.update({k: v for k, v in zip(other.times, other.values)})
+            self.times, self.values = zip(*sorted(cur.items()))
 
     def get(self, timestamp, preceeding=True):
         if timestamp is None:
@@ -72,9 +76,32 @@ class MetadataSeries(object):
                              f'{min(self.times)} to {max(self.times)}')
 
     def range(self, time, duration):
+        """
+        Selects a range of values, one prior is always included if extant, and empty series if time prior,
+        only unique values are returned """
         t = np.asarray(self.times)
-        use = (t>=time) & (t<=time+duration)
-        return MetadataSeries(t[use], np.asarray(self.values)[use])
+        use = (t >= time) & (t <= time+duration)
+        if use.any():
+            preceeding_ndx = use.argwhere().min()-1
+            if preceeding_ndx > 0:
+                use[preceeding_ndx] = True
+            times, values = list(t[use]), list(np.asarray(self.values)[use])
+        else:
+            if time > max(self.times):
+                times = [self.times[len(self.times)-1]]
+                values = [self.values[len(self.times)-1]]
+            else:
+                times, values = [], []
+
+        i = 1
+        while i < len(values)-1:
+            if values[i] == values[i-1]:
+                times.pop(i)
+                values.pop(i)
+            else:
+                i += 1
+
+        return MetadataSeries(times, values)
 
 
 class KeyInfo(object):
