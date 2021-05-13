@@ -194,7 +194,7 @@ def get_ditherdata_for_time(base, start):
     except:
         pathdata = _datadircache[base] = parse_datadir(base)
 
-    keys = np.array(pathdata.keys())
+    keys = np.array(list(pathdata.keys()))
     try:
         nightdata = pathdata[keys[keys < start].max()]
     except ValueError:
@@ -225,7 +225,7 @@ def get_bindir_for_time(base, start):
     except:
         pathdata = _datadircache[base] = parse_datadir(base)
 
-    keys = np.array(pathdata.keys())
+    keys = np.array(list(pathdata.keys()))
     try:
         return pathdata[keys[keys < start].max()]['bindir']
     except ValueError:
@@ -243,7 +243,7 @@ def get_obslogs(base, start=None):
     if not start:
         nightdata = pathdata.values()
     else:
-        keys = np.array(pathdata.keys())
+        keys = np.array(list(pathdata.keys()))
         try:
             nightdata = [pathdata[keys[keys < start].max()]]
         except ValueError:
