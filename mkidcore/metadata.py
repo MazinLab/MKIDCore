@@ -15,18 +15,16 @@ from astropy.time import TimezoneInfo
 import astropy.units as u
 
 from mkidcore.corelog import getLogger
-import mkidcore.config
 
+_FITS_STD = ('BSCALE', 'BUNIT', 'BZERO', 'CDELT', 'CRPIX', 'CRVAL', 'CTYPE', 'CUNIT', 'PC')
 
-
-_FITS_STD = ('BSCALE','BUNIT','BZERO','CDELT','CRPIX','CRVAL','CTYPE','CUNIT','PC')
-
-_LEGACY_OBSLOG_MAP= {"comment": "comment", "el": "ALTITUDE", "equinox": "EQUINOX", "utctcs": "UT", "az": "AZIMUTH",
-                    "instrument": "INSTRUME", "device_orientation": "M_DEVANG", "ra": "RA", "airmass": "AIRMASS",
-                    "dither_pos": ("M_CONEXX", "M_CONEXY"), "dither_ref": ("M_CXREFX", "M_CXREFY"), "parallactic": None,
-                    "ha": None, "utc": "UTC-STR", "observatory": "OBSERVAT", "laser": None, "target": "OBJECT",
-                    "filter": "M_FLTPOS", "dither_home": ("M_PREFX", "M_PREFY"), "platescale": "M_PLTSCL",
-                    "flipper": "M_FLPPOS", "dec": "DEC"}
+_LEGACY_OBSLOG_MAP = {"comment": "comment", "el": "ALTITUDE", "equinox": "EQUINOX", "utctcs": "UT", "az": "AZIMUTH",
+                      "instrument": "INSTRUME", "device_orientation": "M_DEVANG", "ra": "RA", "airmass": "AIRMASS",
+                      "dither_pos": ("M_CONEXX", "M_CONEXY"), "dither_ref": ("M_CXREFX", "M_CXREFY"),
+                      "parallactic": 'D_IMRPAD',
+                      "ha": None, "utc": "UTC-STR", "observatory": "OBSERVAT", "laser": None, "target": "OBJECT",
+                      "filter": "M_FLTPOS", "dither_home": ("M_PREFX", "M_PREFY"), "platescale": "M_PLTSCL",
+                      "flipper": "M_FLPPOS", "dec": "DEC"}
 
 
 class MetadataSeries(object):
@@ -39,7 +37,7 @@ class MetadataSeries(object):
     def add(self, time, value):
         """Caution will happily overwrite duplicate times"""
         ndx = bisect(self.times, time)
-        if ndx != 0 and self.times[ndx-1] == time:
+        if ndx != 0 and self.times[ndx - 1] == time:
             getLogger(__name__).debug(f"Replacing {self.values[ndx]} with {value} at {time}")
             self.values[ndx] = value
         else:
@@ -80,22 +78,22 @@ class MetadataSeries(object):
         Selects a range of values, one prior is always included if extant, and empty series if time prior,
         only unique values are returned """
         t = np.asarray(self.times)
-        use = (t >= time) & (t <= time+duration)
+        use = (t >= time) & (t <= time + duration)
         if use.any():
-            preceeding_ndx = use.argwhere().min()-1
+            preceeding_ndx = use.argwhere().min() - 1
             if preceeding_ndx > 0:
                 use[preceeding_ndx] = True
             times, values = list(t[use]), list(np.asarray(self.values)[use])
         else:
             if time > max(self.times):
-                times = [self.times[len(self.times)-1]]
-                values = [self.values[len(self.times)-1]]
+                times = [self.times[len(self.times) - 1]]
+                values = [self.values[len(self.times) - 1]]
             else:
                 times, values = [], []
 
         i = 1
-        while i < len(values)-1:
-            if values[i] == values[i-1]:
+        while i < len(values) - 1:
+            if values[i] == values[i - 1]:
                 times.pop(i)
                 values.pop(i)
             else:
@@ -106,7 +104,7 @@ class MetadataSeries(object):
 
 class KeyInfo(object):
     def __init__(self, **kwargs):
-        kwargs['name']=kwargs.pop('fits_card')
+        kwargs['name'] = kwargs.pop('fits_card')
         self.__dict__.update(kwargs)
 
     @property
@@ -115,17 +113,18 @@ class KeyInfo(object):
 
 
 def _parse_mec_keys():
-    with open(pkg.resource_filename('mkidcore','mec_keys.csv')) as f:
+    with open(pkg.resource_filename('mkidcore', 'mec_keys.csv')) as f:
         data = [row for row in csv.reader(f)]
 
-    data=[{k.strip().lower().replace(' ','_').replace('?','') :v.strip() for k,v in zip(data[0],l)} for l in data[1:]]
+    data = [{k.strip().lower().replace(' ', '_').replace('?', ''): v.strip() for k, v in zip(data[0], l)} for l in
+            data[1:]]
     for k in data:
         if k['type'].lower().startswith('f'):
             try:
                 k['default'] = float(k['default'])
             except:
                 pass
-        for kk in ('from_tcs','from_mec', 'from_observer', 'from_pipeline', 'ignore_changes_during_data_capture',
+        for kk in ('from_tcs', 'from_mec', 'from_observer', 'from_pipeline', 'ignore_changes_during_data_capture',
                    'required_by_pipeline'):
             k[kk] = bool(k[kk])
         k['has_source'] = int(k['has_source'])
@@ -135,7 +134,7 @@ def _parse_mec_keys():
 
 
 MEC_KEY_INFO = _parse_mec_keys()
-DEFAULT_CARDSET = {k: v.fits_card for k,v in MEC_KEY_INFO.items()}
+DEFAULT_CARDSET = {k: v.fits_card for k, v in MEC_KEY_INFO.items()}
 _metadata = {'files': [], 'data': defaultdict(MetadataSeries)}
 
 
@@ -147,7 +146,8 @@ def parse_legacy_obslog(file):
     with open(file, 'r') as f:
         lines = f.readlines()
 
-    dat = {kk: MetadataSeries() for k in _LEGACY_OBSLOG_MAP.values() if k for kk in (k if isinstance(k,tuple) else [k])}
+    dat = {kk: MetadataSeries() for k in _LEGACY_OBSLOG_MAP.values() if k for kk in
+           (k if isinstance(k, tuple) else [k])}
     for l in lines:
         ldict = json.loads(l)
         utc = datetime.strptime(ldict['utc'], "%Y%m%d%H%M%S")
@@ -163,7 +163,7 @@ def parse_legacy_obslog(file):
     return dat
 
 
-def load_observing_metadata(path, files=tuple(), use_cache=True):
+def load_observing_metadata(path='', files=tuple(), use_cache=True):
     """Return a list of mkidcore.config.ConfigThings with the contents of the metadata from observing log files"""
     global _metadata
 
@@ -227,9 +227,10 @@ def build_header(metadata=None):
         unix_stop = metadata['UNIXEND']
         TIME_KEYS = ('HST-END', 'HST-STR', 'MJD-END', 'MJD-STR', 'UT-END', 'UT-STR')
         if not unix_start and not unix_stop:
-            assert [metadata[key] is not None for key in TIME_KEYS], 'header must contain UNIXSTR, UNIXEND or all of {}'.format(TIME_KEYS)
+            assert [metadata[key] is not None for key in
+                    TIME_KEYS], 'header must contain UNIXSTR, UNIXEND or all of {}'.format(TIME_KEYS)
         else:
-            hst = TimezoneInfo(utc_offset=-10*u.hour)
+            hst = TimezoneInfo(utc_offset=-10 * u.hour)
             t1 = Time(unix_start, format='unix')
             t2 = Time(unix_stop, format='unix')
             dt1 = datetime.fromtimestamp(t1.value, tz=hst)
@@ -255,7 +256,6 @@ def build_header(metadata=None):
                 cardset[k] = metadata[k]
 
     return Header(cardset.values())
-
 
 
 def build_wcs(md, times, ref_pixels, derotate=True, naxis=2):
