@@ -1,11 +1,19 @@
+import os.path
 from functools import wraps
 import inspect
 import multiprocessing as mp
-import astropy
 from logging import getLogger
 import ast
+from glob import glob
+from datetime import datetime
+import numpy as np
 
 _manager = None
+
+# dict of path roots each a dict with where keys are the night start time and values are dictss
+# obslogs (list of obslog files), ditherlogs (list of dither log files), bindir (the bin dir)
+# dithers, if present is a parsed collection of the dither log files
+_datadircache = {}
 
 
 def parse_ditherlog(file):
@@ -88,6 +96,7 @@ def freeze(cls, msg="Class {cls} is frozen. Cannot set {key} = {value}"):
         def wrapper(self, *args, **kwargs):
             func(self, *args, **kwargs)
             self.__frozen = True
+
         return wrapper
 
     cls.__setattr__ = frozensetattr
@@ -128,7 +137,7 @@ def caller_name(skip=2):
     return ".".join(name)
 
 
-def derangify(s,delim=','):
+def derangify(s, delim=','):
     """
     Takes a range in form of "a-b" and generate a list of numbers between
     a and b inclusive.
@@ -138,17 +147,106 @@ def derangify(s,delim=','):
     http://code.activestate.com/recipes/577279-generate-list-of-
     numbers-from-hyphenated-and-comma/
     """
-    s="".join(s.split())#removes white space
-    r=set()
+    s = "".join(s.split())  # removes white space
+    r = set()
     for x in s.split(delim):
-        t=x.split('-')
-        if len(t) not in [1,2]:
-            raise SyntaxError("'{}'".format(s)+
+        t = x.split('-')
+        if len(t) not in [1, 2]:
+            raise SyntaxError("'{}'".format(s) +
                               "does not seem to be derangeifyable")
-        if len(t)==1:
+        if len(t) == 1:
             r.add(int(t[0]))
         else:
-            r.update(set(range(int(t[0]),int(t[1])+1)))
-    l=list(r)
+            r.update(set(range(int(t[0]), int(t[1]) + 1)))
+    l = list(r)
     l.sort()
     return tuple(l)
+
+
+def parse_datadir(path):
+    """Look through a data directory and return paths for nights, logs, and obslogs"""
+    pathdata = {}
+    for d in (d for d in glob(os.path.join(path, '*')) if os.path.isdir(d)):
+        night = os.path.relpath(d, path)
+        try:
+            date = datetime.strptime(night, '%Y%m%d')
+        except ValueError:
+            getLogger(__name__).debug('Skipping {d}')
+            continue
+        obslogs = glob(os.path.join(d, 'logs', 'obslog*.json'))
+        ditherlogs = glob(os.path.join(d, 'logs', 'dither*.log'))
+        bin = glob(os.path.join(d, '*.bin'))
+        if not bin:
+            if obslogs or ditherlogs:
+                getLogger(__name__).warning('No binfiles in {} despite presence of logs'.format(d))
+            continue
+        times = np.array(list(map(lambda x: int(os.path.splitext(os.path.basename(x))[0]), bin)))
+        nmin = times.min()
+        pathdata[nmin] = dict(obslogs=obslogs, ditherlogs=ditherlogs, bindir=d)
+
+    return pathdata
+
+
+def get_ditherdata_for_time(base, start):
+    global _datadircache
+    try:
+        pathdata = _datadircache[base]
+    except:
+        pathdata = _datadircache[base] = parse_datadir(base)
+
+    keys = np.array(pathdata.keys())
+    try:
+        nightdata = pathdata[keys[keys < start].max()]
+    except ValueError:
+        raise ValueError('No directory in {} found for start {}'.format(base, start))
+
+    try:
+        nightdata['dithers']
+    except KeyError:
+        nightdata['dithers'] = {}
+        for f in nightdata['ditherlogs']:
+            nightdata['dithers'].update(parse_ditherlog(f))
+
+    try:
+        start = start.timestamp()
+    except AttributeError:
+        pass
+
+    for (t0, t1), v in nightdata['dithers'].items():
+        if t0 - (t1 - t0) <= start <= t1:
+            return v
+    raise ValueError('No dither found for time {}'.format(start))
+
+
+def get_bindir_for_time(base, start):
+    global _datadircache
+    try:
+        pathdata = _datadircache[base]
+    except:
+        pathdata = _datadircache[base] = parse_datadir(base)
+
+    keys = np.array(pathdata.keys())
+    try:
+        return pathdata[keys[keys < start].max()]['bindir']
+    except ValueError:
+        raise ValueError('No directory in {} found for start {}'.format(base, start))
+
+
+def get_obslogs(base, start=None):
+    """If start time is passed only obslogs files for that night will be returned"""
+    global _datadircache
+    try:
+        pathdata = _datadircache[base]
+    except:
+        pathdata = _datadircache[base] = parse_datadir(base)
+
+    if not start:
+        nightdata = pathdata.values()
+    else:
+        keys = np.array(pathdata.keys())
+        try:
+            nightdata = [pathdata[keys[keys < start].max()]]
+        except ValueError:
+            raise ValueError('No directory in {} found for start {}'.format(base, start))
+
+    return [l for n in nightdata for l in n['obslogs']]
