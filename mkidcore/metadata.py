@@ -126,7 +126,7 @@ def _parse_mec_keys():
                 pass
         for kk in ('from_tcs', 'from_mec', 'from_observer', 'from_pipeline', 'ignore_changes_during_data_capture',
                    'required_by_pipeline'):
-            k[kk] = bool(k[kk])
+            k[kk] = k[kk]=='1'
         k['has_source'] = int(k['has_source'])
         k['fits_card'] = k['fits_card'].upper()
 
