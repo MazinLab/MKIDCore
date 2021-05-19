@@ -171,7 +171,7 @@ def parse_datadir(path):
         try:
             date = datetime.strptime(night, '%Y%m%d')
         except ValueError:
-            getLogger(__name__).debug('Skipping {d}')
+            getLogger(__name__).debug(f'Skipping {d}')
             continue
         obslogs = glob(os.path.join(d, 'logs', 'obslog*.json'))
         ditherlogs = glob(os.path.join(d, 'logs', 'dither*.log'))
@@ -191,7 +191,7 @@ def get_ditherdata_for_time(base, start):
     global _datadircache
     try:
         pathdata = _datadircache[base]
-    except:
+    except KeyError:
         pathdata = _datadircache[base] = parse_datadir(base)
 
     keys = np.array(list(pathdata.keys()))

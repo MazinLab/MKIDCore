@@ -38,16 +38,16 @@ class MetadataSeries(object):
         """Caution will happily overwrite duplicate times"""
         ndx = bisect(self.times, time)
         if ndx != 0 and self.times[ndx - 1] == time:
-            getLogger(__name__).debug(f"Replacing {self.values[ndx]} with {value} at {time}")
-            self.values[ndx] = value
+            getLogger(__name__).debug(f"Replacing {self.values[ndx-1]} with {value} at {time}")
+            self.values[ndx-1] = value
         else:
             self.times.insert(ndx, time)
             self.values.insert(ndx, value)
 
     def __iadd__(self, other):
-        """ Replaces any existing times"""
+        """ Replaces any existing times """
         if not other.times:
-            return
+            return self
         if not self.times:
             self.times.extend(other.times)
             self.values.extend(other.values)
@@ -60,7 +60,8 @@ class MetadataSeries(object):
         else:
             cur = {k: v for k, v in zip(self.times, self.values)}
             cur.update({k: v for k, v in zip(other.times, other.values)})
-            self.times, self.values = zip(*sorted(cur.items()))
+            self.times, self.values = map(list, zip(*sorted(cur.items())))
+        return self
 
     def get(self, timestamp, preceeding=True):
         if timestamp is None:
@@ -181,7 +182,14 @@ def load_observing_metadata(path='', files=tuple(), use_cache=True):
 
     for f in files:
         if f not in parsed:
-            recs = parse_legacy_obslog(f)
+            try:
+                recs = parse_legacy_obslog(f)
+            except PermissionError:
+                getLogger(__name__).warning(f'Insufficient permissions: {f}. Skipping.')
+                continue
+            except IOError as e:
+                getLogger(__name__).warning(f'IOError: {f}. Skipping.')
+                continue
             for k, v in recs.items():
                 md[k] += v
             parsed.append(f)
@@ -195,7 +203,7 @@ def validate_metadata_dict(md, warn=True, error=False):
         if k not in md:
             missing.append(k)
     if warn and missing:
-        getLogger(__name__).warning('Key(s) {} missing from {}'.format(str(missing), md))
+        getLogger(__name__).warning('Key(s) {} missing'.format(str(missing)))
     if error and missing:
         raise KeyError('Missing keys: {}'.format(str(missing)))
 
