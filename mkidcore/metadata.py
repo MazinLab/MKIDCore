@@ -153,8 +153,11 @@ def parse_legacy_obslog(file):
         ldict = json.loads(l)
         utc = datetime.strptime(ldict['utc'], "%Y%m%d%H%M%S")
         for k in ldict:
-            newkey = _LEGACY_OBSLOG_MAP[k]
-            if not newkey:
+            try:
+                newkey = _LEGACY_OBSLOG_MAP[k]
+                if not newkey:
+                    continue
+            except KeyError:
                 continue
             newkeys = newkey if isinstance(newkey, tuple) else [newkey]
             values = ldict[k] if isinstance(newkey, tuple) else [ldict[k]]
