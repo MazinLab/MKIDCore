@@ -64,6 +64,9 @@ class MetadataSeries(object):
         return self
 
     def get(self, timestamp, preceeding=True):
+        if not self.times:
+            raise ValueError(f'No metadata available for {timestamp}')
+
         if timestamp is None:
             return self.values[0]
 
@@ -264,7 +267,7 @@ def build_header(metadata=None, unknown_keys='error'):
         if unknown_keys == 'error':
             raise ValueError(msg)
         elif unknown_keys == 'warn':
-            getLogger(__name__).warning(msg)
+            getLogger(__name__).warning(msg+' for inclusion.')
         for k in bad:
             metadata.pop(k)
 
