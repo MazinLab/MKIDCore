@@ -44,9 +44,11 @@ for k in list(ROACHESB):
     ROACHESB[k.upper()] = ROACHESB[k]
 
 INSTRUMENT_INFO = {'mec': dict(deadtime_us=10, energy_bin_width_ev=0.1, minimum_wavelength=700,
-                               maximum_wavelength=1500, nominal_platescale_mas=10.4),
+                               maximum_wavelength=1500, nominal_platescale_mas=10.4,
+                               device_orientation_deg=-48.26),
                    'darkness': dict(deadtime_us=10, energy_bin_width_ev=0.1, minimum_wavelength=700,
-                                    maximum_wavelength=1500, nominal_platescale_mas=10.4)}
+                                    maximum_wavelength=1500, nominal_platescale_mas=10.4,
+                                    device_orientation_deg=0)}
 
 
 class InstrumentInfo(mkidcore.config.ConfigThing):
@@ -67,6 +69,8 @@ class InstrumentInfo(mkidcore.config.ConfigThing):
                 for k, v in INSTRUMENT_INFO[default.lower()].items():
                     if 'nominal_platescale_mas' in k:
                         v *= astropy.units.mas
+                    if 'device_orientation_deg' in k:
+                        v *= astropy.units.deg
                     self.register(k, v)
             except KeyError:
                 raise ValueError('Unknown instrument: ' + args[0])
@@ -76,10 +80,11 @@ class InstrumentInfo(mkidcore.config.ConfigThing):
     @classmethod
     def to_yaml(cls, representer, node):
         x = {k: v for k, v in node.items()}
-        try:
-            x['nominal_platescale_mas'] = float(x['nominal_platescale_mas'].value)
-        except:
-            x['nominal_platescale_mas'] = float(x['nominal_platescale_mas'])
+        for k in ('nominal_platescale_mas', 'device_orientation_deg'):
+            try:
+                x[k] = float(x[k].value)
+            except:
+                x[k] = float(x[k])
         return representer.represent_mapping(cls.yaml_tag, x)
 
     @classmethod
