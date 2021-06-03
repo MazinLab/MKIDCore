@@ -120,9 +120,15 @@ def _parse_mec_keys():
     data = [{k.strip().lower().replace(' ', '_').replace('?', ''): v.strip() for k, v in zip(data[0], l)} for l in
             data[1:]]
     for k in data:
+        k['default'] = k['default'].strip()
         if k['type'].lower().startswith('f'):
             try:
                 k['default'] = float(k['default'])
+            except:
+                pass
+        if k['type'].lower().startswith('i'):
+            try:
+                k['default'] = int(k['default'])
             except:
                 pass
         for kk in ('from_tcs', 'from_mec', 'from_observer', 'from_pipeline', 'ignore_changes_during_data_capture',
@@ -254,7 +260,7 @@ def build_header(metadata=None, unknown_keys='error'):
     bad = [k for k in novel if not isinstance(metadata[k], Card)]
     if bad:
         msg = 'Keys {} are not known and must be passed as astropy.io.fits.Card'.format(bad)
-        unknown_keys=unknown_keys.lower()
+        unknown_keys = unknown_keys.lower()
         if unknown_keys == 'error':
             raise ValueError(msg)
         elif unknown_keys == 'warn':

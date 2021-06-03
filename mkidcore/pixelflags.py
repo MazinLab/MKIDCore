@@ -73,15 +73,20 @@ class FlagSet(object):
         return tuple([name for name, f in self.flags.items() if f.bitmask & bitmask])
 
     def valid(self, bitmask, error=True):
-        #must support arrays
-        getLogger(__name__).debug('Flag validity not implemented')
-        return True
+        if np.isscalar(bitmask):
+            bitmask = np.array([bitmask])
+        if (bitmask < 2**len(self.flags)).all():
+            return True
+        elif error:
+            raise ValueError('Bitmask invalid for flagset.')
+        return False
 
     def __iter__(self):
         for f in self.flags.values():
             yield f
 
-#DO not edit these without considering MKIDReadout!
+
+# DO not edit these without considering MKIDReadout!
 BEAMMAP_FLAGS = FlagSet.define(
     ('noDacTone', 1, 'Pixel not read out'),
     ('failed', 2, 'Beammap failed to place pixel'),
@@ -115,4 +120,3 @@ filters = {'not_started': 0,  # calculation has not been started.
            'bad_template': 64,  # template calculation failed. Using the fallback template.
            'bad_template_fit': 128,  # the template fit failed. Using the raw data.
            'bad_filter': 256}  # filter calculation failed. Using the template as a filter.
-
