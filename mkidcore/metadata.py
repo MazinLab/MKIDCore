@@ -127,7 +127,7 @@ def _parse_mec_keys():
                 pass
         for kk in ('from_tcs', 'from_mec', 'from_observer', 'from_pipeline', 'ignore_changes_during_data_capture',
                    'required_by_pipeline'):
-            k[kk] = k[kk]=='1'
+            k[kk] = k[kk] == '1'
         k['has_source'] = int(k['has_source'])
         k['fits_card'] = k['fits_card'].upper()
 
@@ -153,11 +153,8 @@ def parse_legacy_obslog(file):
         ldict = json.loads(l)
         utc = datetime.strptime(ldict['utc'], "%Y%m%d%H%M%S")
         for k in ldict:
-            try:
-                newkey = _LEGACY_OBSLOG_MAP[k]
-                if not newkey:
-                    continue
-            except KeyError:
+            newkey = _LEGACY_OBSLOG_MAP.get(k, None)
+            if not newkey:
                 continue
             newkeys = newkey if isinstance(newkey, tuple) else [newkey]
             values = ldict[k] if isinstance(newkey, tuple) else [ldict[k]]
@@ -225,7 +222,7 @@ def observing_metadata_for_timerange(start, duration, metadata_source=None):
     return {k: v.range(start, duration) for k, v in metadata_source.items()}
 
 
-def build_header(metadata=None):
+def build_header(metadata=None, unknown_keys='error'):
     """ Build a header with all of the keys and their default values with optional updates via metadata. Additional
     novel cards may be included via metadata as well.
 
@@ -256,7 +253,14 @@ def build_header(metadata=None):
     novel = set(metadata.keys()).difference(set(DEFAULT_CARDSET.keys()))
     bad = [k for k in novel if not isinstance(metadata[k], Card)]
     if bad:
-        raise ValueError('Keys {} are not known and must be passed as astropy.io.fits.Card'.format(bad))
+        msg = 'Keys {} are not known and must be passed as astropy.io.fits.Card'.format(bad)
+        unknown_keys=unknown_keys.lower()
+        if unknown_keys == 'error':
+            raise ValueError(msg)
+        elif unknown_keys == 'warn':
+            getLogger(__name__).warning(msg)
+        for k in bad:
+            metadata.pop(k)
 
     cardset = copy.deepcopy(DEFAULT_CARDSET)
     if metadata is not None:
