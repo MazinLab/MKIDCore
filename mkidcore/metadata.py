@@ -300,7 +300,11 @@ def build_wcs(md, times, ref_pixels, derotate=True, naxis=2):
         try:
             coord = SkyCoord.from_name(md['OBJECT'])
         except astropy.coordinates.name_resolve.NameResolveError:
-            getLogger(__name__).warning('Insufficient data to build a WCS solution')
+            getLogger(__name__).warning('Insufficient data to build a WCS solution, '
+                                        'unable to resolve {} via SIMBAD'.format(md["OBJECT"]))
+            return None
+        except KeyError:
+            getLogger(__name__).warning('Insufficient data to build a WCS solution, no coordinates or object specified')
             return None
 
     try:
@@ -308,7 +312,7 @@ def build_wcs(md, times, ref_pixels, derotate=True, naxis=2):
         devang = np.deg2rad(md['M_DEVANG'])
         platescale = md['M_PLTSCL']  # units should be mas/pix
     except KeyError:
-        getLogger(__name__).warning('Insufficient data to build a WCS solution')
+        getLogger(__name__).warning('Insufficient data to build a WCS solution, missing instrument info')
         return None
 
     pa = apo.parallactic_angle(times, coord).value  # radians
