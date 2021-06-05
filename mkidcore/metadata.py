@@ -109,7 +109,13 @@ class MetadataSeries(object):
 class KeyInfo(object):
     def __init__(self, **kwargs):
         kwargs['name'] = kwargs.pop('fits_card')
+        for k in kwargs:
+            try:
+                kwargs[k] = kwargs[k].strip()
+            except:
+                pass
         self.__dict__.update(kwargs)
+
 
     @property
     def fits_card(self):
