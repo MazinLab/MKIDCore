@@ -16,7 +16,7 @@ _manager = None
 _datadircache = {}
 
 
-def parse_ditherlog(file):
+def parse_dither(file):
     parsed_log = {}
     with open(file, 'r') as f:
         lines = f.readlines()
@@ -205,7 +205,7 @@ def get_ditherdata_for_time(base, start):
     except KeyError:
         nightdata['dithers'] = {}
         for f in nightdata['ditherlogs']:
-            nightdata['dithers'].update(parse_ditherlog(f))
+            nightdata['dithers'].update(parse_dither(f))
 
     try:
         start = start.timestamp()
