@@ -212,16 +212,22 @@ def load_observing_metadata(path='', files=tuple(), use_cache=True):
     return md
 
 
-def validate_metadata_dict(md, warn=True, error=False):
-    missing = []
-    for k in DEFAULT_CARDSET:
+def validate_metadata_dict(md, warn='all', error=False):
+    """ warn and error can be set to 'all'/True, 'required', 'none'/False"""
+    missing, missing_required = [], []
+    for k in MEC_KEY_INFO:
         if k not in md:
             missing.append(k)
-    if warn and missing:
+            if MEC_KEY_INFO[k].required_by_pipeline:
+                missing_required.append(k)
+    if warn in (True, 'all') and missing:
         getLogger(__name__).warning('Key(s) {} missing'.format(str(missing)))
-    if error and missing:
+    elif warn == 'required' and missing_required:
+        getLogger(__name__).warning('Required Key(s) {} missing'.format(str(missing_required)))
+    if error in (True, 'all') and missing:
         raise KeyError('Missing keys: {}'.format(str(missing)))
-
+    elif error == 'required' and missing_required:
+        raise KeyError('Missing keys: {}'.format(str(missing_required)))
     return len(missing) != 0
 
 
