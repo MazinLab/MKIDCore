@@ -9,10 +9,13 @@ import csv
 from bisect import bisect
 from collections import defaultdict
 
+import astropy
 from astropy.io.fits import Card, Header
-from astropy.time import Time
-from astropy.time import TimezoneInfo
+from astropy.time import Time, TimezoneInfo
 import astropy.units as u
+from astropy.coordinates import SkyCoord
+import astropy.wcs as wcs
+from astroplan import Observer
 
 from mkidcore.corelog import getLogger
 
@@ -223,7 +226,7 @@ def validate_metadata_dict(md, warn='all', error=False):
     if warn in (True, 'all') and missing:
         getLogger(__name__).warning('Key(s) {} missing'.format(str(missing)))
     elif warn == 'required' and missing_required:
-        getLogger(__name__).warning('Required Key(s) {} missing'.format(str(missing_required)))
+        getLogger(__name__).warning('Required key(s) {} missing'.format(str(missing_required)))
     if error in (True, 'all') and missing:
         raise KeyError('Missing keys: {}'.format(str(missing)))
     elif error == 'required' and missing_required:
@@ -295,14 +298,12 @@ def build_header(metadata=None, unknown_keys='error'):
 
 
 def build_wcs(md, times, ref_pixels, derotate=True, naxis=2):
-    """Build WCS from a metadata dictonary, must have keys for ra, dec (or simbad target), dither positions, reference,
-    platescale, observatory
-     """
-    from astropy.coordinates import SkyCoord
-    import astropy
-    import astropy.wcs as wcs
-    import astropy.units as u
-    from astroplan import Observer
+    """
+    Build WCS from a metadata dictonary, must have keys RA, Dec EQUINOX or OBJECT (for simbad target), TELESCOP,
+    M_DEVANG, and M_PLTSCL. ref_pixels may be an iterable of reference pixels, set naxis to three for an (uninitialized)
+    3rd axis
+    """
+
     try:
         coord = SkyCoord(md['RA'], md['Dec'], md['EQUINOX'], unit=('hourangle', 'deg'))
     except KeyError:
@@ -320,7 +321,7 @@ def build_wcs(md, times, ref_pixels, derotate=True, naxis=2):
             return None
 
     try:
-        apo = Observer.at_site(md['OBSERVAT'])
+        apo = Observer.at_site(md['TELESCOP'])
         devang = np.deg2rad(md['M_DEVANG'])
         platescale = md['M_PLTSCL']  # units should be mas/pix
     except KeyError:
@@ -330,15 +331,22 @@ def build_wcs(md, times, ref_pixels, derotate=True, naxis=2):
     pa = apo.parallactic_angle(times, coord).value  # radians
     corrected_sky_angles = -(pa + devang) if derotate else np.full_like(times, fill_value=devang)
 
+    try:
+        scale = [platescale.to(u.arcsec).value]*2
+    except AttributeError:
+        scale = [platescale] * 2
+
     out = []
     for ca, ref_pixel in zip(corrected_sky_angles, ref_pixels):
         x = wcs.WCS(naxis=naxis)
         x.wcs.crpix[:2] = ref_pixel
         x.wcs.crval[:2] = [coord.ra.deg, coord.dec.deg]
-        x.wcs.ctype[:2] = ["RA--TAN", "DEC-TAN"]
+        x.wcs.ctype[0] = "RA--TAN"  # astropy doesn't support slices on StrListProxy objects
+        x.wcs.ctype[1] = "DEC-TAN"
         x.wcs.pc[:2, :2] = np.array([[np.cos(ca), -np.sin(ca)],
                                      [np.sin(ca), np.cos(ca)]])
-        x.wcs.cdelt[:2] = [platescale.to(u.arcsec).value, platescale.to(u.arcsec).value]
-        x.wcs.cunit[:2] = ["deg", "deg"]
+        x.wcs.cdelt[:2] = scale
+        x.wcs.cunit[0] = "deg"
+        x.wcs.cunit[1] = "deg"
         out.append(x)
     return out
