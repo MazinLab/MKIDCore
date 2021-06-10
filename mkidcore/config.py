@@ -420,7 +420,7 @@ class ConfigThing(dict):
         """
         if namespace is None:
             namespace = caller_name().lower()
-            getLogger('MKIDConfig').debug('Assuming namespace "{}"'.format(namespace))
+            getLogger(self.__class__).debug('Assuming namespace "{}"'.format(namespace))
 
         toreg = ([(k, v) for k, v in cp.items('DEFAULT')] +
                  [(s + '.' + k, v) for s in cp.sections() for k, v in cp.items(s)])
@@ -438,7 +438,7 @@ class ConfigThing(dict):
         with self._lock:
             if namespace is None:
                 namespace = caller_name().lower()
-                getLogger('MKIDConfig').debug('Assuming namespace "{}"'.format(namespace))
+                getLogger(self.__class__).debug('Assuming namespace "{}"'.format(namespace))
 
             namespace = namespace if namespace.endswith('.') else (namespace + '.' if namespace else '')
             for k, v in kv:
