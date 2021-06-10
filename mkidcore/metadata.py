@@ -297,6 +297,26 @@ def build_header(metadata=None, unknown_keys='error'):
     return Header(cardset.values())
 
 
+def skycoord_from_metadata(md, force_simbad=False):
+    coord = None
+    if not force_simbad:
+        try:
+            coord = SkyCoord(md['RA'], md['Dec'], md['EQUINOX'], unit=('hourangle', 'deg'))
+        except KeyError:
+            pass
+
+    if coord is None:
+        try:
+            coord = SkyCoord.from_name(md['OBJECT'])
+        except astropy.coordinates.name_resolve.NameResolveError:
+            raise KeyError('Unable resolve {} via SIMBAD and no RA/Dec/Equinox provided'.format(md["OBJECT"]))
+        except KeyError:
+            pass
+    if coord is None:
+        raise KeyError('Neither RA/DEC/EQUINOX nor OBJECT specified')
+    return coord
+
+
 def build_wcs(md, times, ref_pixels, derotate=True, naxis=2):
     """
     Build WCS from a metadata dictonary, must have keys RA, Dec EQUINOX or OBJECT (for simbad target), TELESCOP,
@@ -305,20 +325,10 @@ def build_wcs(md, times, ref_pixels, derotate=True, naxis=2):
     """
 
     try:
-        coord = SkyCoord(md['RA'], md['Dec'], md['EQUINOX'], unit=('hourangle', 'deg'))
-    except KeyError:
-        coord = None
-
-    if coord is None:
-        try:
-            coord = SkyCoord.from_name(md['OBJECT'])
-        except astropy.coordinates.name_resolve.NameResolveError:
-            getLogger(__name__).warning('Insufficient data to build a WCS solution, '
-                                        'unable to resolve {} via SIMBAD'.format(md["OBJECT"]))
-            return None
-        except KeyError:
-            getLogger(__name__).warning('Insufficient data to build a WCS solution, no coordinates or object specified')
-            return None
+        coord = skycoord_from_metadata(md)
+    except KeyError as e:
+        getLogger(__name__).warning('Insufficient data to build a WCS solution, {}'.format(e))
+        return None
 
     try:
         apo = Observer.at_site(md['TELESCOP'])
