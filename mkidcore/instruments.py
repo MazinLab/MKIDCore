@@ -92,13 +92,12 @@ class InstrumentInfo(mkidcore.config.ConfigThing):
         ret = super().from_yaml(loader, node)
         return ret
 
+
 mkidcore.config.yaml.register_class(InstrumentInfo)
 
+
 def CONEX2PIXEL(xCon, yCon):
-    """
-    Emprically determined from a white light dither done over the whole array on 12/13/19
-    -Sarah Steiger
-    """
+    """ Emprically determined from a white light dither done over the whole array on 12/13/19 -Sarah Steiger """
     # from scipy.optimize import curve_fit
 
     # psf_centers = [[65.0, 68.0],[77.0, 106.0],[89.0, 106.0],[42.0, 108.0],[42.0, 115.0], [124.0, 82.0],[101.0, 122.0],
@@ -134,23 +133,16 @@ def CONEX2PIXEL(xCon, yCon):
     #     xConFit[i] = pos[0]
     #     yConFit[i] = pos[1]
 
-
     def func(x, slope, intercept):
         return x * slope + intercept
-    #
-    #
+
     # xopt, xcov = curve_fit(func, xConFit, xPosFit)
     # yopt, ycov = curve_fit(func, yConFit, yPosFit)
 
-    def con2Pix(xCon, yCon, func):
-        return [func(xCon, *xopt), func(yCon, *yopt)]
+    xopt = (-63.36778615, 88.47319224)
+    yopt = (68.5940592, 83.7997898)
 
-    xopt = [-63.36778615, 88.47319224]
-    yopt = [68.5940592, 83.7997898]
-
-    xPos, yPos = con2Pix(xCon, yCon, func)
-
-    return [xPos, yPos]
+    return np.asarray((func(xCon, *xopt), func(yCon, *yopt)))
 
 
 def compute_wcs_ref_pixel(position, center=(0, 0), target_center_at_ref=(0, 0), instrument='mec'):
@@ -177,7 +169,7 @@ def compute_wcs_ref_pixel(position, center=(0, 0), target_center_at_ref=(0, 0), 
     if instrument.lower() != 'mec':
         raise NotImplementedError('MEC is only supported instrument.')
     position = np.asarray(position)  # asarray converts CommentedSeq type to ndarray
-    pix = np.asarray(CONEX2PIXEL(position[0], position[1])) - np.array(CONEX2PIXEL(*center))
+    pix = CONEX2PIXEL(position[0], position[1]) - CONEX2PIXEL(*center)
     pix += np.asarray(target_center_at_ref).reshape(2)
     return pix[::-1]
 

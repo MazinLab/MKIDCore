@@ -298,26 +298,21 @@ def build_header(metadata=None, unknown_keys='error'):
 
 
 def skycoord_from_metadata(md, force_simbad=False):
-    coord = None
     if not force_simbad:
         try:
-            coord = SkyCoord(md['RA'], md['Dec'], md['EQUINOX'], unit=('hourangle', 'deg'))
+            return SkyCoord(md['RA'], md['Dec'], md['EQUINOX'], unit=('hourangle', 'deg'))
         except KeyError:
             pass
-
-    if coord is None:
         try:
-            coord = SkyCoord.from_name(md['OBJECT'])
+        return SkyCoord.from_name(md['OBJECT'])
         except astropy.coordinates.name_resolve.NameResolveError:
             raise KeyError('Unable resolve {} via SIMBAD and no RA/Dec/Equinox provided'.format(md["OBJECT"]))
         except KeyError:
             pass
-    if coord is None:
         raise KeyError('Neither RA/DEC/EQUINOX nor OBJECT specified')
-    return coord
 
 
-def build_wcs(md, times, ref_pixels, derotate=True, naxis=2):
+def build_wcs(md, times, ref_pixels, shape, derotate=True, cubeaxis=None):
     """
     Build WCS from a metadata dictonary, must have keys RA, Dec EQUINOX or OBJECT (for simbad target), TELESCOP,
     M_DEVANG, and M_PLTSCL. ref_pixels may be an iterable of reference pixels, set naxis to three for an (uninitialized)
@@ -347,16 +342,20 @@ def build_wcs(md, times, ref_pixels, derotate=True, naxis=2):
         scale = [platescale] * 2
 
     out = []
+
+    wcs_dict = {'CTYPE1': 'RA--TAN', 'CUNIT1': 'deg', 'CDELT1': scale[0], 'CRPIX1': None, 'CRVAL1': coord.ra.deg,
+                'NAXIS1': shape[0],
+                'CTYPE2': 'DEC-TAN', 'CUNIT2': 'deg', 'CDELT2': scale[1], 'CRPIX2': None, 'CRVAL2': coord.dec.deg,
+                'NAXIS2': shape[1]}
+
+    if cubeaxis:
+        wcs_dict.update(cubeaxis)
+
     for ca, ref_pixel in zip(corrected_sky_angles, ref_pixels):
-        x = wcs.WCS(naxis=naxis)
-        x.wcs.crpix[:2] = ref_pixel
-        x.wcs.crval[:2] = [coord.ra.deg, coord.dec.deg]
-        x.wcs.ctype[0] = "RA--TAN"  # astropy doesn't support slices on StrListProxy objects
-        x.wcs.ctype[1] = "DEC-TAN"
+        wcs_dict['CRPIX1'] = ref_pixel[0]
+        wcs_dict['CRPIX2'] = ref_pixel[1]
+        x = wcs.WCS(wcs_dict)
         x.wcs.pc[:2, :2] = np.array([[np.cos(ca), -np.sin(ca)],
                                      [np.sin(ca), np.cos(ca)]])
-        x.wcs.cdelt[:2] = scale
-        x.wcs.cunit[0] = "deg"
-        x.wcs.cunit[1] = "deg"
         out.append(x)
     return out

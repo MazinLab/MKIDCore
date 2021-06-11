@@ -441,6 +441,10 @@ class Beammap(object):
                 'yCoord': self.yCoords, 'flag': self.flags}
 
     @property
+    def shape(self):
+        return self.nrows, self.ncols
+
+    @property
     def failmask(self):
         mask = np.ones((self.nrows, self.ncols), dtype=bool)
         use = (self.yCoords.astype(int) < self.nrows) & (self.xCoords.astype(int) < self.ncols)
@@ -469,4 +473,3 @@ class Beammap(object):
 
 
 mkidcore.config.yaml.register_class(Beammap)
-
