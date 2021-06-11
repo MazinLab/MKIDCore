@@ -351,7 +351,11 @@ def build_wcs(md, times, ref_pixels, shape, derotate=True, cubeaxis=None):
     try:
         scale = [platescale.to(u.deg).value]*2
     except AttributeError:
-        scale = [platescale] * 2
+        if platescale > 1:
+            ps = (platescale*u.mas).to(u.deg).value
+        elif platescale > .0001:
+            ps = (platescale * u.arcsec).to(u.deg).value
+        scale = [ps] * 2
 
     out = []
 
