@@ -145,7 +145,7 @@ def CONEX2PIXEL(xCon, yCon):
     return np.asarray((func(xCon, *xopt), func(yCon, *yopt)))
 
 
-def compute_wcs_ref_pixel(position, center=(0, 0), target_center_at_ref=(0, 0), instrument='mec'):
+def compute_wcs_ref_pixel(position, reference=(0, 0), reference_pixel=(0, 0), instrument='mec'):
     """
     A function to convert the connex offset to pixel displacement
 
@@ -168,10 +168,9 @@ def compute_wcs_ref_pixel(position, center=(0, 0), target_center_at_ref=(0, 0), 
     """
     if instrument.lower() != 'mec':
         raise NotImplementedError('MEC is only supported instrument.')
-    position = np.asarray(position)  # asarray converts CommentedSeq type to ndarray
-    pix = CONEX2PIXEL(position[0], position[1]) - CONEX2PIXEL(*center)
-    pix += np.asarray(target_center_at_ref).reshape(2)
-    return pix[::-1]
+    # position = np.asarray(position)  # asarray converts CommentedSeq type to ndarray
+    pix = CONEX2PIXEL(position[0], position[1]) - CONEX2PIXEL(*reference) + np.asarray(reference_pixel)
+    return pix[::-1]  #TODO why?!?!
 
 
 def roachnum(fl, band, instrument='MEC'):

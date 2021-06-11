@@ -274,6 +274,14 @@ def build_header(metadata=None, unknown_keys='error'):
             metadata['UT-END'] = t2.iso[-12:-1]
             metadata['UT-STR'] = t1.iso[-12:-1]
 
+        if 'OBJECT' in metadata and ('RA' not in metadata or 'DEC' not in metadata):
+            getLogger(__name__).info('Fetching coordinates from simbad')
+            try:
+                sc = SkyCoord.from_name(metadata['OBJECT']).transform_to(frame=astropy.coordinates.FK5(equinox='J2000'))
+                metadata.update({'RA': sc.ra.hourangle, 'DEC': sc.dec.deg, 'EQUINOX': 'J2000'})
+            except Exception:
+                getLogger(__name__).warning('Unable to get coordinates for {}'.format(metadata['OBJECT']))
+
     novel = set(metadata.keys()).difference(set(DEFAULT_CARDSET.keys()))
     bad = [k for k in novel if not isinstance(metadata[k], Card)]
     if bad:
@@ -300,16 +308,20 @@ def build_header(metadata=None, unknown_keys='error'):
 def skycoord_from_metadata(md, force_simbad=False):
     if not force_simbad:
         try:
-            return SkyCoord(md['RA'], md['Dec'], md['EQUINOX'], unit=('hourangle', 'deg'))
+            eq = md['EQUINOX']
+            if eq[0].isdigit():
+                getLogger(__name__).info('Assuming equinox {} is Julian'.format(eq))
+                eq = 'J'+eq
+            return SkyCoord(md['RA'], md['DEC'], equinox=eq, unit=('hourangle', 'deg'))
         except KeyError:
             pass
-        try:
-        return SkyCoord.from_name(md['OBJECT'])
-        except astropy.coordinates.name_resolve.NameResolveError:
-            raise KeyError('Unable resolve {} via SIMBAD and no RA/Dec/Equinox provided'.format(md["OBJECT"]))
-        except KeyError:
-            pass
-        raise KeyError('Neither RA/DEC/EQUINOX nor OBJECT specified')
+    try:
+        return SkyCoord.from_name(md['OBJECT']).transform_to(frame=astropy.coordinates.FK5(equinox='J2000'))
+    except astropy.coordinates.name_resolve.NameResolveError:
+        raise KeyError('Unable resolve {} via SIMBAD and no RA/Dec/Equinox provided'.format(md["OBJECT"]))
+    except KeyError:
+        pass
+    raise KeyError('Neither RA/DEC/EQUINOX nor OBJECT specified')
 
 
 def build_wcs(md, times, ref_pixels, shape, derotate=True, cubeaxis=None):
@@ -337,7 +349,7 @@ def build_wcs(md, times, ref_pixels, shape, derotate=True, cubeaxis=None):
     corrected_sky_angles = -(pa + devang) if derotate else np.full_like(times, fill_value=devang)
 
     try:
-        scale = [platescale.to(u.arcsec).value]*2
+        scale = [platescale.to(u.deg).value]*2
     except AttributeError:
         scale = [platescale] * 2
 
