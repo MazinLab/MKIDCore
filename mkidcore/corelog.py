@@ -86,6 +86,7 @@ def setup_logging(configfile='', env_key='MKID_LOG_CONFIG', logfile=None, **kwar
         coloredlogs.install()
     except NameError:
         pass
+    logging.captureWarnings(True)
     install_mp_handler()
     logging.getLogger('matplotlib').setLevel(logging.INFO)
 
