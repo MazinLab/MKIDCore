@@ -44,7 +44,7 @@
 #endif
 
 //max number of characters in all strings
-#define STR_SIZE 200
+#define STR_SIZE 4096
 
 //number of dimensions in the Variable Length array (VLarray).
 //There is a 1D array of pointers to variable length arrays, so rank=1
@@ -187,7 +187,7 @@ long extract_photons(const char *binpath, unsigned long start_timestamp, unsigne
                      unsigned long n_max_photons, photon* otable, int verbose) {
 
 
-    char fName[STR_SIZE]; //TODO this should be a malloc based on the length of binpath to prevent possibile segfault
+    char fName[STR_SIZE];
     int FirstFile, mapflag, nRoaches;
     uint32_t beamCols, beamRows, nFiles;
     long fSize, rd, i, j, k, x, y;

@@ -43,12 +43,10 @@ for k in list(ROACHESA):
 for k in list(ROACHESB):
     ROACHESB[k.upper()] = ROACHESB[k]
 
-INSTRUMENT_INFO = {'mec': dict(deadtime_us=10, energy_bin_width_ev=0.1, minimum_wavelength=700,
-                               maximum_wavelength=1500, nominal_platescale_mas=10.4,
-                               device_orientation_deg=-48.26),
+INSTRUMENT_INFO = {'mec': dict(deadtime_us=10, energy_bin_width_ev=0.1, minimum_wavelength=700, #todo filter_cutoff_min=950,
+                               maximum_wavelength=1500, nominal_platescale_mas=10.4, device_orientation_deg=-48.26),
                    'darkness': dict(deadtime_us=10, energy_bin_width_ev=0.1, minimum_wavelength=700,
-                                    maximum_wavelength=1500, nominal_platescale_mas=10.4,
-                                    device_orientation_deg=0)}
+                                    maximum_wavelength=1500, nominal_platescale_mas=10.4, device_orientation_deg=0)}
 
 
 class InstrumentInfo(mkidcore.config.ConfigThing):
@@ -64,7 +62,7 @@ class InstrumentInfo(mkidcore.config.ConfigThing):
             pass
 
         if default:
-            super().__init__(**kwargs)
+            super(InstrumentInfo, self).__init__(**kwargs)
             try:
                 for k, v in INSTRUMENT_INFO[default.lower()].items():
                     if 'nominal_platescale_mas' in k:
@@ -75,7 +73,7 @@ class InstrumentInfo(mkidcore.config.ConfigThing):
             except KeyError:
                 raise ValueError('Unknown instrument: ' + args[0])
         else:
-            super().__init__(*args, **kwargs)
+            super(InstrumentInfo, self).__init__(*args, **kwargs)
 
     @classmethod
     def to_yaml(cls, representer, node):
@@ -89,7 +87,7 @@ class InstrumentInfo(mkidcore.config.ConfigThing):
 
     @classmethod
     def from_yaml(cls, loader, node):
-        ret = super().from_yaml(loader, node)
+        ret = super(InstrumentInfo, cls).from_yaml(loader, node)
         return ret
 
 
@@ -168,9 +166,8 @@ def compute_wcs_ref_pixel(position, reference=(0, 0), reference_pixel=(0, 0), in
     """
     if instrument.lower() != 'mec':
         raise NotImplementedError('MEC is only supported instrument.')
-    # position = np.asarray(position)  # asarray converts CommentedSeq type to ndarray
-    pix = CONEX2PIXEL(position[0], position[1]) - CONEX2PIXEL(*reference) + np.asarray(reference_pixel)
-    return pix[::-1]  #TODO why?!?!
+    #TODO this ::-1 flips the reference pixel. Why are we doing this?
+    return (CONEX2PIXEL(position[0], position[1]) - CONEX2PIXEL(*reference) + np.asarray(reference_pixel))[::-1]
 
 
 def roachnum(fl, band, instrument='MEC'):
@@ -181,7 +178,6 @@ def roachnum(fl, band, instrument='MEC'):
 
 
 def guessFeedline(filename):
-    # TODO generalize and find a home for this function
     try:
         flNum = int(re.search('fl\d', filename, re.IGNORECASE).group()[-1])
     except AttributeError:

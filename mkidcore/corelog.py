@@ -115,6 +115,11 @@ def create_log(name, logfile='', console=True, mpsafe=True, propagate=False,
     log.setLevel(level)
     log.propagate = propagate
 
+
+    import multiprocessing
+    logger = multiprocessing.log_to_stderr()
+    logger.setLevel(multiprocessing.SUBDEBUG)
+
     if mpsafe:
         install_mp_handler(logger=log)
 

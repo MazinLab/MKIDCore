@@ -163,8 +163,11 @@ class Beammap(object):
 
     @classmethod
     def from_yaml(cls, constructor, node):
-        #TODO I don't know why I used extract_from_node here and dict(loader.construct_pairs(node)) elsewhere
-        d = mkidcore.config.extract_from_node(constructor,('file', 'nrows', 'ncols', 'default', 'freqfiles'), node)
+        # d = dict(constructor.construct_pairs(node))
+        # discarded = [(k, d.pop(k)) for k in d.keys() if k not in ('file', 'nrows', 'ncols', 'default', 'freqfiles')]
+        #TODO NB extract_from_node is MUCH faster than d = dict(constructor.construct_pairs(node))
+
+        d = mkidcore.config.extract_from_node(constructor, ('file', 'nrows', 'ncols', 'default', 'freqfiles'), node)
 
         if 'default' in d:
             bmap = cls(d['default'])
@@ -298,7 +301,10 @@ class Beammap(object):
             raise Exception('This is not a valid Beammap attribute')
 
     def getResonatorData(self, resID):
-        index = np.where(self.resIDs == resID)[0][0]  #TODO Noah don't use where!
+        index, = np.where(self.resIDs == resID)[0]
+        if index.size>1:
+            getLogger(__name__).warning('resID {} is not unique'.format(resID))
+        index = index[0]
         resonator = [int(self.resIDs[index]), int(self.flags[index]), int(self.xCoords[index]), int(self.yCoords[index]),
                      float(self.frequencies[index])]
         return resonator
