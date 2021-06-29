@@ -308,7 +308,7 @@ def build_header(metadata=None, unknown_keys='error'):
 def skycoord_from_metadata(md, force_simbad=False):
     if not force_simbad:
         try:
-            eq = md['EQUINOX']
+            eq = str(md['EQUINOX'])
             if eq[0].isdigit():
                 getLogger(__name__).info('Assuming equinox {} is Julian'.format(eq))
                 eq = 'J'+eq
