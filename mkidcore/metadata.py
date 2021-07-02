@@ -299,6 +299,8 @@ def build_header(metadata=None, unknown_keys='error'):
         for k in metadata:
             try:
                 cardset[k].value = metadata[k]
+            except ValueError:
+                cardset[k].value = metadata[k].value
             except KeyError:
                 cardset[k] = metadata[k]
 
