@@ -298,11 +298,16 @@ def build_header(metadata=None, unknown_keys='error'):
     if metadata is not None:
         for k in metadata:
             try:
-                cardset[k].value = metadata[k]
+                val = metadata[k].to(MEC_KEY_INFO[k].unit).value
+            except AttributeError:
+                val = metadata[k]
             except ValueError:
-                cardset[k].value = metadata[k].value
+                getLogger(__name__).debug(f'Unit {MEC_KEY_INFO[k].unit} not supported by astropy - using raw value')
+                val = metadata[k].value
+            try:
+                cardset[k].value = val
             except KeyError:
-                cardset[k] = metadata[k]
+                cardset[k] = val
 
     return Header(cardset.values())
 
