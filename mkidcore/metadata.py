@@ -21,10 +21,12 @@ from mkidcore.corelog import getLogger
 
 _FITS_STD = ('BSCALE', 'BUNIT', 'BZERO', 'CDELT', 'CRPIX', 'CRVAL', 'CTYPE', 'CUNIT', 'PC')
 
-_LEGACY_OBSLOG_MAP = {"comment": "comment", "el": "ALTITUDE", "equinox": "EQUINOX", "utctcs": "UT", "az": "AZIMUTH",
+_LEGACY_OBSLOG_MAP = {"comment": "comment", "el": "ALTITUDE", "equinox": "EQUINOX", "utctcs": "UT",
+                      "tcs-utc": "UT", "az": "AZIMUTH",
                       "instrument": "INSTRUME", "device_orientation": "M_DEVANG", "ra": "RA", "airmass": "AIRMASS",
                       "dither_pos": ("M_CONEXX", "M_CONEXY"), "dither_ref": ("M_CXREFX", "M_CXREFY"),
                       "parallactic": 'D_IMRPAD',
+                      'd_imrpad': 'D_IMRPAD', "ut": "UT",  #NB these two keys were updated in readout so they may be present here
                       "ha": None, "utc": "UTC-STR", "observatory": "OBSERVAT", "laser": None, "target": "OBJECT",
                       "filter": "M_FLTPOS", "dither_home": ("M_PREFX", "M_PREFY"), "platescale": "M_PLTSCL",
                       "flipper": "M_FLPPOS", "dec": "DEC"}
