@@ -108,6 +108,10 @@ class MetadataSeries(object):
 
         return MetadataSeries(times, values)
 
+    @property
+    def domain(self):
+        return (min(self.times), max(self.times)) if self.times else None
+
 
 class KeyInfo(object):
     def __init__(self, **kwargs):
@@ -243,7 +247,17 @@ def observing_metadata_for_timerange(start, duration, metadata_source=None):
     if isinstance(metadata_source, str):
         metadata_source = load_observing_metadata(metadata_source)
 
-    return {k: v.range(start, duration) for k, v in metadata_source.items()}
+    ret = {}
+    missing = []
+    for k, v in metadata_source.items():
+        try:
+            ret[k] = v.range(start, duration)
+        except ValueError:
+            missing.append(k)
+    if missing:
+        raise ValueError(f'No metadata for {start:.0f} ({duration:.0f}s):\n\t'+
+                         '\n\t'.join(missing))
+    return ret
 
 
 def build_header(metadata=None, unknown_keys='error'):
