@@ -39,6 +39,9 @@ class MetadataSeries(object):
         self.times = list(times) if times else []
         self.values = list(values) if values else []
 
+    def is_empty(self):
+        return len(self.values) == 0
+
     def add(self, time, value):
         """Caution will happily overwrite duplicate times"""
         ndx = bisect(self.times, time)
