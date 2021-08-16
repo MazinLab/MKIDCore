@@ -171,7 +171,7 @@ def parse_datadir(path):
         try:
             date = datetime.strptime(night, '%Y%m%d')
         except ValueError:
-            getLogger(__name__).debug(f'Skipping {d}')
+            getLogger(__name__).debug('Skipping {}'.format(d))
             continue
         obslogs = glob(os.path.join(d, 'logs', 'obslog*.json'))
         ditherlogs = glob(os.path.join(d, 'logs', 'dither*.log'))

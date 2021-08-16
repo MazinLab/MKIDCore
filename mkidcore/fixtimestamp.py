@@ -67,7 +67,7 @@ def fix_timestamp_bug(file):
         timestamps = np.array(timeList, dtype=np.int64)  # convert timestamps to signed values
         repeatTest = np.array(np.where(timestamps == timestamps[0]))
         if len(repeatTest[0]) > 1:
-            getLogger(__name__).debug(f"ResID {resID} repeatTest[0] >1")
+            getLogger(__name__).debug("ResID {} repeatTest[0] >1".format(resID))
             correctedTimeList = np.concatenate((_correct_timestamps(timestamps[0:repeatTest[0][1]]),
                                                 _correct_timestamps(timestamps[repeatTest[0][1]:len(timestamps)])))
         else:

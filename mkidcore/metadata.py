@@ -46,7 +46,7 @@ class MetadataSeries(object):
         """Caution will happily overwrite duplicate times"""
         ndx = bisect(self.times, time)
         if ndx != 0 and self.times[ndx - 1] == time:
-            getLogger(__name__).debug(f"Replacing {self.values[ndx-1]} with {value} at {time}")
+            getLogger(__name__).debug("Replacing {} with {} at {}".format(self.values[ndx-1], value, time))
             self.values[ndx-1] = value
         else:
             self.times.insert(ndx, time)
@@ -73,7 +73,7 @@ class MetadataSeries(object):
 
     def get(self, timestamp, preceeding=True):
         if not self.times:
-            raise ValueError(f'No metadata available for {timestamp}')
+            raise ValueError('No metadata available for {}'.format(timestamp))
 
         if timestamp is None:
             return self.values[0]
@@ -82,8 +82,8 @@ class MetadataSeries(object):
         try:
             return np.asarray(self.values)[delta < 0][-1] if preceeding else self.values[np.abs(delta).argmin()]
         except IndexError:
-            raise ValueError(f'No metadata available for {timestamp}, records from '
-                             f'{min(self.times)} to {max(self.times)}')
+            raise ValueError('No metadata available for {}, records from '.format(timestamp)+
+                             '{} to {}'.format(min(self.times),max(self.times)))
 
     def range(self, time, duration):
         """
@@ -212,10 +212,10 @@ def load_observing_metadata(path='', files=tuple(), use_cache=True):
             try:
                 recs = parse_legacy_obslog(f)
             except PermissionError:
-                getLogger(__name__).warning(f'Insufficient permissions: {f}. Skipping.')
+                getLogger(__name__).warning('Insufficient permissions: {}. Skipping.'.format(f))
                 continue
             except IOError as e:
-                getLogger(__name__).warning(f'IOError: {f}. Skipping.')
+                getLogger(__name__).warning('IOError: {}. Skipping.'.format(f))
                 continue
             for k, v in recs.items():
                 md[k] += v
@@ -260,7 +260,7 @@ def observing_metadata_for_timerange(start, duration, metadata_source=None):
         except ValueError:
             missing.append(k)
     if missing:
-        raise ValueError(f'No metadata for {start:.0f} ({duration:.0f}s):\n\t'+
+        raise ValueError('No metadata for {:.0f} ({:.0f}s):\n\t'.format(start,duration)+
                          '\n\t'.join(missing))
     return ret
 
@@ -321,7 +321,7 @@ def build_header(metadata=None, unknown_keys='error'):
             except AttributeError:
                 val = metadata[k]
             except ValueError:
-                getLogger(__name__).debug(f'Unit {MEC_KEY_INFO[k].unit} not supported by astropy - using raw value')
+                getLogger(__name__).debug('Unit {} not supported by astropy - using raw value'.format(MEC_KEY_INFO[k].unit))
                 val = metadata[k].value
             try:
                 cardset[k].value = val
