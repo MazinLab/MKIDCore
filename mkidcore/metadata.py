@@ -92,7 +92,7 @@ class MetadataSeries(object):
         t = np.asarray(self.times)
         use = (t >= time) & (t <= time + duration)
         if use.any():
-            preceeding_ndx = use.argwhere().min() - 1
+            preceeding_ndx = np.argmin(use.min()) - 1
             if preceeding_ndx > 0:
                 use[preceeding_ndx] = True
             times, values = list(t[use]), list(np.asarray(self.values)[use])
