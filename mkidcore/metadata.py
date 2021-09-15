@@ -23,13 +23,13 @@ _FITS_STD = ('BSCALE', 'BUNIT', 'BZERO', 'CDELT', 'CRPIX', 'CRVAL', 'CTYPE', 'CU
 
 _LEGACY_OBSLOG_MAP = {"comment": "comment", "el": "ALTITUDE", "equinox": "EQUINOX", "utctcs": "UT",
                       "tcs-utc": "UT", "az": "AZIMUTH",
-                      "instrument": "INSTRUME", "device_orientation": "M_DEVANG", "ra": "RA", "airmass": "AIRMASS",
-                      "dither_pos": ("M_CONEXX", "M_CONEXY"), "dither_ref": ("M_CXREFX", "M_CXREFY"),
+                      "instrument": "INSTRUME", "device_orientation": "E_DEVANG", "ra": "RA", "airmass": "AIRMASS",
+                      "dither_pos": ("E_CONEXX", "E_CONEXY"), "dither_ref": ("E_CXREFX", "E_CXREFY"),
                       "parallactic": 'D_IMRPAD',
                       'd_imrpad': 'D_IMRPAD', "ut": "UT",  #NB these two keys were updated in readout so they may be present here
                       "ha": None, "utc": "UTC-STR", "observatory": "OBSERVAT", "laser": None, "target": "OBJECT",
-                      "filter": "M_FLTPOS", "dither_home": ("M_PREFX", "M_PREFY"), "platescale": "M_PLTSCL",
-                      "flipper": "M_FLPPOS", "dec": "DEC"}
+                      "filter": "E_FLTPOS", "dither_home": ("E_PREFX", "E_PREFY"), "platescale": "E_PLTSCL",
+                      "flipper": "E_FLPPOS", "dec": "DEC"}
 
 
 class MetadataSeries(object):
@@ -365,8 +365,8 @@ def build_wcs(md, times, ref_pixels, shape, derotate=True, cubeaxis=None):
 
     try:
         apo = Observer.at_site(md['TELESCOP'])
-        devang = np.deg2rad(md['M_DEVANG'])
-        platescale = md['M_PLTSCL']  # units should be mas/pix
+        devang = np.deg2rad(md['E_DEVANG'])
+        platescale = md['E_PLTSCL']  # units should be mas/pix
     except KeyError:
         getLogger(__name__).warning('Insufficient data to build a WCS solution, missing instrument info')
         return None
