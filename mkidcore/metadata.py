@@ -353,7 +353,7 @@ def skycoord_from_metadata(md, force_simbad=False):
 def build_wcs(md, times, ref_pixels, shape, derotate=True, cubeaxis=None):
     """
     Build WCS from a metadata dictonary, must have keys RA, Dec EQUINOX or OBJECT (for simbad target), TELESCOP,
-    M_DEVANG, and M_PLTSCL. ref_pixels may be an iterable of reference pixels, set naxis to three for an (uninitialized)
+    E_DEVANG, and E_PLTSCL. ref_pixels may be an iterable of reference pixels, set naxis to three for an (uninitialized)
     3rd axis
     """
 
