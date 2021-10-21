@@ -187,7 +187,25 @@ def parse_legacy_obslog(file):
             values = ldict[k] if isinstance(newkey, tuple) else [ldict[k]]
             for kk, vv in zip(newkeys, values):
                 dat[kk].add(utc.timestamp(), vv)
+    return dat
 
+
+def parse_obslog(file):
+    with open(file, 'r') as f:
+        lines = f.readlines()
+
+    dat = {}
+    for l in lines:
+        ldict = json.loads(l)
+        utc = datetime.strptime(ldict['utc'], "%Y%m%d%H%M%S")
+        for k in ldict:
+            if k.upper() not in MEC_KEY_INFO:
+                continue
+            val = ldict[k]
+            try:
+                dat[k.upper()].add(utc.timestamp(), val)
+            except KeyError:
+                dat[k.upper()] = MetadataSeries(times=[utc.timestamp()], values=[val])
     return dat
 
 
@@ -211,16 +229,19 @@ def load_observing_metadata(path='', files=tuple(), use_cache=True):
         if f not in parsed:
             try:
                 recs = parse_legacy_obslog(f)
+                new_recs = parse_obslog(f)
+                for k in new_recs:
+                    recs[k] = new_recs[k]
             except PermissionError:
                 getLogger(__name__).warning('Insufficient permissions: {}. Skipping.'.format(f))
                 continue
             except IOError as e:
                 getLogger(__name__).warning('IOError: {}. Skipping.'.format(f))
                 continue
+
             for k, v in recs.items():
                 md[k] += v
             parsed.append(f)
-
     return md
 
 
