@@ -87,8 +87,12 @@ class MetadataSeries(object):
 
     def range(self, time, duration):
         """
-        Selects a range of values, one prior is always included if extant, and empty series if time prior,
-        only unique values are returned """
+        Selects a range of values, one prior record is always included if extant, an empty series if there are no
+        records  prior.
+        Raises ValueError if there are times but no values or value but no times. If this happens something is weird!
+
+        Only unique values are returned
+        """
         t = np.asarray(self.times)
         use = (t >= time) & (t <= time + duration)
         if use.any():
@@ -269,6 +273,10 @@ def observing_metadata_for_timerange(start, duration, metadata_source=None):
     Metadata that goes into an H5 consists of records within the duration
 
     requires metadata_source be an indexable iterable with an attribute utc pointing to a datetime
+
+    Returns a dictionary of MetadataSeries
+
+    Does not include defaults key values (they do not have times).
     """
     if isinstance(metadata_source, str):
         metadata_source = load_observing_metadata(metadata_source)
