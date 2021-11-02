@@ -379,11 +379,13 @@ def skycoord_from_metadata(md, force_simbad=False):
     raise KeyError('Neither RA/DEC/EQUINOX nor OBJECT specified')
 
 
-def build_wcs(md, times, ref_pixels, shape, derotate=True, cubeaxis=None):
+def build_wcs(md, times, ref_pixels, shape, subtract_parallactic=True, cubeaxis=None):
     """
     Build WCS from a metadata dictonary, must have keys RA, Dec EQUINOX or OBJECT (for simbad target), TELESCOP,
     E_DEVANG, and E_PLTSCL. ref_pixels may be an iterable of reference pixels, set naxis to three for an (uninitialized)
     3rd axis
+
+    The WCS PC matrix corrects for the device rotation angle and, if subtract_parallactic is set, the PA.
     """
 
     try:
@@ -400,8 +402,9 @@ def build_wcs(md, times, ref_pixels, shape, derotate=True, cubeaxis=None):
         getLogger(__name__).warning('Insufficient data to build a WCS solution, missing instrument info')
         return None
 
-    pa = apo.parallactic_angle(times, coord).value  # radians
-    corrected_sky_angles = -(pa + devang) if derotate else np.full_like(times, fill_value=devang)
+    corrected_sky_angles = np.full_like(times, fill_value=-devang)
+    if subtract_parallactic:
+        corrected_sky_angles -= apo.parallactic_angle(times, coord).value  # radians
 
     try:
         scale = [platescale.to(u.deg).value]*2
