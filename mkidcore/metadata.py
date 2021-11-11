@@ -170,46 +170,47 @@ DEFAULT_CARDSET = {k: v.fits_card for k, v in MEC_KEY_INFO.items()}
 _metadata = {'files': [], 'data': defaultdict(MetadataSeries)}
 
 
-def parse_legacy_obslog(file):
-    """
-    file consists of a series of dicts in time. Translate them into a series of K:V sets in time with k a subset of
-    modern keys
-    """
-    with open(file, 'r') as f:
-        lines = f.readlines()
-
-    dat = {kk: MetadataSeries() for k in _LEGACY_OBSLOG_MAP.values() if k for kk in
-           (k if isinstance(k, tuple) else [k])}
-    for l in lines:
-        ldict = json.loads(l)
-        utc = datetime.strptime(ldict['utc'], "%Y%m%d%H%M%S")
-        for k in ldict:
-            newkey = _LEGACY_OBSLOG_MAP.get(k, None)
-            if not newkey:
-                continue
-            newkeys = newkey if isinstance(newkey, tuple) else [newkey]
-            values = ldict[k] if isinstance(newkey, tuple) else [ldict[k]]
-            for kk, vv in zip(newkeys, values):
-                dat[kk].add(utc.timestamp(), vv)
+def _process_legacy_record(rdict):
+    """Returns a dict with modern keys and values from a legacy obslog record"""
+    dat = {}
+    for k, v in rdict.items():
+        newkey = _LEGACY_OBSLOG_MAP.get(k, None)
+        if not newkey:
+            continue
+        if not isinstance(newkey, tuple):
+            newkey = [newkey]
+            v = [v]
+        for kk, vv in zip(newkey, v):
+            dat[kk] = vv
     return dat
 
 
 def parse_obslog(file):
+    """
+    File consists of a series of JSON dicts in time.
+    Translate them into a dict of MetadataSeries with a subset of all the keys (only listed keys included).
+    Both legacy and modern formats are supported. Legacy formats will have unused values silently dropped
+    """
     with open(file, 'r') as f:
         lines = f.readlines()
 
     dat = {}
     for l in lines:
         ldict = json.loads(l)
+        if 'device_orientation' in l:
+            ldict = _process_legacy_record(ldict)
+
+        from datetime import timezone
         utc = datetime.strptime(ldict['utc'], "%Y%m%d%H%M%S")
-        for k in ldict:
-            if k.upper() not in MEC_KEY_INFO:
-                continue
-            val = ldict[k]
+        utc.replace(tzinfo=timezone.utc)
+        for k, v in ldict.items():
+            k = k.upper()
+            if k not in MEC_KEY_INFO:
+                getLogger(__name__).debug('"{}" is not a known key, ignoring.'.format(k))
             try:
-                dat[k.upper()].add(utc.timestamp(), val)
+                dat[k].add(utc.timestamp(), v)
             except KeyError:
-                dat[k.upper()] = MetadataSeries(times=[utc.timestamp()], values=[val])
+                dat[k] = MetadataSeries(times=[utc.timestamp()], values=[v])
     return dat
 
 
@@ -232,10 +233,7 @@ def load_observing_metadata(path='', files=tuple(), use_cache=True):
     for f in files:
         if f not in parsed:
             try:
-                recs = parse_legacy_obslog(f)
-                new_recs = parse_obslog(f)
-                for k in new_recs:
-                    recs[k] = new_recs[k]
+                recs = parse_obslog(f)
             except PermissionError:
                 getLogger(__name__).warning('Insufficient permissions: {}. Skipping.'.format(f))
                 continue
