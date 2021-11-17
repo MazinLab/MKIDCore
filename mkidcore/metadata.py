@@ -201,7 +201,7 @@ def parse_obslog(file):
             ldict = _process_legacy_record(ldict)
 
         from datetime import timezone
-        utc = datetime.strptime(ldict['utc'], "%Y%m%d%H%M%S")
+        utc = datetime.strptime(ldict['UTC-STR'], "%Y%m%d%H%M%S")
         utc.replace(tzinfo=timezone.utc)
         for k, v in ldict.items():
             k = k.upper()
