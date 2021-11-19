@@ -250,3 +250,54 @@ def get_obslogs(base, start=None):
             raise ValueError('No directory in {} found for start {}'.format(base, start))
 
     return [l for n in nightdata for l in n['obslogs']]
+
+
+def find_clock_offsets(olog_data, dither, timezone=True, timezone_shift=7):
+    """
+    Takes in data from an obslog as a dict of {'key':<mkidcore.metadata.MetadataSeries>} and an
+    <mkidppipeline.definitions.MKIDDitherDescription> object to find any discrepancies in the clock synchronization
+    between when the CONEX mirror was moved (from the obslog data) and when the dither believes that step in the
+    sequence occurred.
+    If timezone==True, <timezone_shift> hours (PT = UTC-7:00) will be subtracted from the UNIX timestamps
+    that are pulled from the obslog data. This stems from an issue where it is converted to a UNIX timestamp twice and
+    BOTH times, an assumption is made that the timestamp is in local time which causes a discrepancy of 7 hours between
+    the timestamps from the obslog metadataseries and the time of observation.
+
+    Returns a list of offsets from the start of the corresponding dither step to when the conex moved.
+    """
+
+    def find_conex_time_from_dither_step(olog_xs, olog_ys, olog_ts, dither_step):
+        """
+        Takes in a list of conex x and y positions, a corresponding list of times, and a single dither step
+         <mkidppipeline.definitions.MKIDDitherDescription>.obs[step_number]
+
+        Returns the difference between the timestep that the conex logged is move at and the start of the dither step.
+        If the conex moved before the step started this will be negative,
+        if the conex moved after the step started, it will be positive
+        """
+        dither_x = dither_step.dither_pos[0]
+        dither_y = dither_step.dither_pos[1]
+
+        same_place_mask = (olog_xs == dither_x) & (olog_ys == dither_y)
+
+        conex_move_times = olog_ts[same_place_mask]
+
+        time_difference = abs(conex_move_times - dither_step.start)
+        closest_time = conex_move_times[time_difference == time_difference.min()]
+
+        return float(closest_time - dither_step.start)
+
+    conex_x_metadata = olog_data['E_CONEXX'].values
+    conex_y_metadata = olog_data['E_CONEXY'].values
+    if timezone:
+        conex_timestamps = np.array(olog_data['E_CONEXX'].times) - timezone_shift * 3600
+    else:
+        conex_timestamps = np.array(olog_data['E_CONEXX'].times)
+
+    offsets = [find_conex_time_from_dither_step(conex_x_metadata,
+                                                conex_y_metadata,
+                                                conex_timestamps,
+                                                frame) for frame in dither.obs]
+
+    return offsets
+
