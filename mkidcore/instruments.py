@@ -43,12 +43,12 @@ for k in list(ROACHESA):
 for k in list(ROACHESB):
     ROACHESB[k.upper()] = ROACHESB[k]
 
-INSTRUMENT_INFO = {'mec': dict(deadtime_us=10, energy_bin_width_ev=0.1, minimum_wavelength=700, #todo filter_cutoff_min=950,
+INSTRUMENT_INFO = {'mec': dict(deadtime_us=10, energy_bin_width_ev=0.1, minimum_wavelength=700, filter_cutoff_min=950,
                                maximum_wavelength=1500, nominal_platescale_mas=10.4, device_orientation_deg=-48.26,
-                               maximum_count_rate=5000),
+                               maximum_count_rate=5000, name='MEC'),
                    'darkness': dict(deadtime_us=10, energy_bin_width_ev=0.1, minimum_wavelength=700,
                                     maximum_wavelength=1500, nominal_platescale_mas=10.4, device_orientation_deg=0,
-                                    maximum_count_rate=5000)}
+                                    maximum_count_rate=5000, name='DARKNESS')}
 
 
 class InstrumentInfo(mkidcore.config.ConfigThing):
