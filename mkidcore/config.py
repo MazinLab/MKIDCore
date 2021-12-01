@@ -92,7 +92,9 @@ class ConfigThing(dict):
         """
         lock = kwargs.pop('lock', None)
         if args:
-            super(ConfigThing, self).update([(cannonizekey(k), v) for k, v in args[0]])
+            #TODO if args has one element and that element is a list of kv pairs then we need to update the
+            # caller or update here to support the extra layer as well
+            super(ConfigThing, self).update([(cannonizekey(k), v) for k, v in args])
         self._lock = RLock() if lock is None else lock
         self.__frozen = True
 
@@ -112,7 +114,7 @@ class ConfigThing(dict):
         # loader is ruamel.yaml.constructor.RoundTripConstructor
         # node is MappingNode(tag=u'!configdict', value=[(ScalarNode(tag=u'tag:yaml.org,2002:str', value=u'initgui'),
         # cls is ConfigThing
-        d = cls(loader.construct_pairs(node))
+        d = cls(*loader.construct_pairs(node))
         d._setlock()
         return d
 
