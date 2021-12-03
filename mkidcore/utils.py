@@ -16,6 +16,12 @@ _manager = None
 _datadircache = {}
 
 
+def mjd_to(mjd, zone):
+    from astropy.time import Time
+    from pytz import timezone
+    return Time(mjd, format='mjd').to_datetime(timezone=timezone(zone))
+
+
 def parse_dither(file):
     parsed_log = {}
     with open(file, 'r') as f:
@@ -300,4 +306,3 @@ def find_clock_offsets(olog_data, dither, timezone=True, timezone_shift=7):
                                                 frame) for frame in dither.obs]
 
     return offsets
-
