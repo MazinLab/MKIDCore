@@ -174,7 +174,9 @@ def _process_legacy_record(rdict):
     """Returns a dict with modern keys and values from a legacy obslog record"""
     dat = {}
     for k, v in rdict.items():
-        newkey = _LEGACY_OBSLOG_MAP.get(k, None)
+        newkey = _LEGACY_OBSLOG_MAP.get(k, None) or MEC_KEY_INFO.get(k.upper(), None)
+        if isinstance(newkey, KeyInfo):
+            newkey = newkey.name
         if not newkey:
             continue
         if not isinstance(newkey, tuple):
