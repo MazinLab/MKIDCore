@@ -203,8 +203,7 @@ def parse_obslog(file):
             ldict = _process_legacy_record(ldict)
 
         from datetime import timezone
-        utc = datetime.strptime(ldict['UTC-STR'], "%Y%m%d%H%M%S")
-        utc = utc.replace(tzinfo=timezone.utc)
+        utc = datetime.strptime(ldict['UTC-STR'], "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
         for k, v in ldict.items():
             k = k.upper()
             if k not in MEC_KEY_INFO:
