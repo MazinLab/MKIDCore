@@ -19,6 +19,9 @@ from astroplan import Observer
 
 from mkidcore.corelog import getLogger
 
+PIPELINE_KEYS = ('E_BASELI', 'E_BMAP', 'E_CFGHSH', 'E_FLTCAL', 'E_GITHSH', 'E_H5FILE',
+                 'E_SPECAL', 'E_WAVCAL', 'E_WCSCAL')
+
 _FITS_STD = ('BSCALE', 'BUNIT', 'BZERO', 'CDELT', 'CRPIX', 'CRVAL', 'CTYPE', 'CUNIT', 'PC')
 
 _LEGACY_OBSLOG_MAP = {"comment": "comment", "el": "ALTITUDE", "equinox": "EQUINOX", "utctcs": "UT",
@@ -248,11 +251,12 @@ def load_observing_metadata(path='', files=tuple(), use_cache=True):
     return md
 
 
-def validate_metadata_dict(md, warn='all', error=False):
-    """ warn and error can be set to 'all'/True, 'required', 'none'/False"""
+def validate_metadata_dict(md, warn='all', error=False, allow_missing=tuple()):
+    """ warn and error can be set to 'all'/True, 'required', 'none'/False
+    place keys in allow_missing if it is ok that they aren't present."""
     missing, missing_required = [], []
     for k in MEC_KEY_INFO:
-        if k not in md:
+        if k not in md and k not in allow_missing:
             missing.append(k)
             if MEC_KEY_INFO[k].required_by_pipeline:
                 missing_required.append(k)
