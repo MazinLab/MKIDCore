@@ -544,63 +544,6 @@ def _consolidate_roach_config(cd):
 yaml.register_class(ConfigThing)
 
 
-# def _include_constructor(self, node):
-#     print(node)
-#     if isinstance(node, ruamel.yaml.ScalarNode):
-#         with open(self.construct_scalar(node), 'r') as f:
-#             return self.construct_document(f)
-#     elif isinstance(node, ruamel.yaml.SequenceNode):
-#         result = []
-#         for filename in self.construct_sequence(node):
-#             with open(filename, 'r') as f:
-#                 result += self.construct_document(f)
-#         return result
-#     elif isinstance(node, ruamel.ruamel.MappingNode):
-#         result = {}
-#         for k, v in self.construct_mapping(node).iteritems():
-#             with open(v, 'r') as f:
-#                 result[k] = self.construct_document(f)
-#         return result
-#     else:
-#         print("Error:: unrecognised node type in !include statement")
-#         raise ruamel.yaml.constructor.ConstructorError
-# ruamel.yaml.add_constructor(u'!include', _include_constructor)
-
-
-# @yaml_object(yaml)
-# class IncludeObject(object):
-#     yaml_tag = u'!include'
-#
-#     def __init__(self, foo):
-#         print(foo)
-#         # self._root = os.path.split(stream.name)[0]
-#
-#     @classmethod
-#     def from_yaml(cls, loader, node):
-#         if isinstance(node, ruamel.yaml.ScalarNode):
-#             import ipdb;ipdb.set_trace()
-#             with open(loader.construct_scalar(node), 'r') as f:
-#                 foo=loader.get_single_data(f)
-#                 foo = yaml.load(f)
-#         elif isinstance(node, ruamel.yaml.SequenceNode):
-#             result = []
-#             for filename in loader.construct_sequence(node):
-#                 with open(filename, 'r') as f:
-#                     result += yaml.load(f)
-#             return result
-#         elif isinstance(node, ruamel.yaml.MappingNode):
-#             result = {}
-#             for k, v in loader.construct_mapping(node).iteritems():
-#                 with open(v, 'r') as f:
-#                     result[k] = yaml.load(f)
-#             return result
-#         else:
-#             raise ruamel.yaml.YAMLError("Unrecognised node type in !include")
-#
-#
-# yaml.register_class(IncludeObject)
-
-
 def load(file, namespace=None):
     if not isinstance(file, str):
         return file
