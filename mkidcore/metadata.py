@@ -370,8 +370,8 @@ def skycoord_from_metadata(md, force_simbad=False):
             if eq[0].isdigit():
                 getLogger(__name__).info('Assuming equinox {} is Julian'.format(eq))
                 eq = 'J'+eq
-            return SkyCoord(md['RA'], md['DEC'], equinox=eq, unit=('hourangle', 'deg'))
-        except KeyError:
+            return SkyCoord(md['D_IMRRA'], md['D_IMRDEC'], equinox=eq, unit=('hourangle', 'deg'))
+        except (KeyError, ValueError) as e:
             pass
     try:
         return SkyCoord.from_name(md['OBJECT']).transform_to(frame=astropy.coordinates.FK5(equinox='J2000'))
