@@ -214,7 +214,9 @@ class Beammap(object):
         self.freqpath = filepath
         powerSweeps = glob(filepath)
         if not powerSweeps:
-            raise FileNotFoundError('No powersweeps found matching {}'.format(filepath))
+            raise FileNotFoundError(f'No powersweeps found matching {filepath}. Ensure the freqfiles keyword in the '
+                                    f'beammap specification (!bmap) will return desired powersweep files - wildcard will'
+                                    f'likely be necessary (i.e. /path/to/files/psData_*')
         psData = np.loadtxt(powerSweeps[0])
         for sweep in powerSweeps[1:]:
             psData = np.concatenate((psData, np.loadtxt(sweep)))
