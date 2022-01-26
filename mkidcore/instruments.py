@@ -105,7 +105,7 @@ def CONEX2PIXEL(xCon, yCon):
     # xopt = (-63.36778615, 88.47319224)
     # yopt = (68.5940592, 83.7997898)
 
-    # Post-fall 2021 (starts with the 20211014 run)
+    # Post-fall 2021 (starts with the 20211013 run)
     xopt = (-67.03698001, 116.81715145)
     yopt = (69.29451828, 66.30860825)
     return np.asarray((func(xCon, *xopt), func(yCon, *yopt)))
