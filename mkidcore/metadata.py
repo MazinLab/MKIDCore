@@ -416,6 +416,10 @@ def build_wcs(md, times, ref_pixels, shape, subtract_parallactic=True, cubeaxis=
             ps = (platescale*u.mas).to(u.deg).value
         elif platescale > .0001:
             ps = (platescale * u.arcsec).to(u.deg).value
+        elif platescale < 1e-5:
+            ps = platescale
+        else:
+            getLogger(__name__).error(f'Platescale {platescale} not in recognizable format')
         scale = [ps] * 2
 
     out = []
