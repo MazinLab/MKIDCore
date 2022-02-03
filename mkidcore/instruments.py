@@ -96,9 +96,9 @@ class InstrumentInfo(mkidcore.config.ConfigThing):
 mkidcore.config.yaml.register_class(InstrumentInfo)
 
 
-def CONEX2PIXEL(xCon, yCon):
-    """ Emprically determined from a white light dither done over the whole array on 12/13/19 -Sarah Steiger """
-
+def CONEX2PIXEL(xCon, yCon, slopes, ref_pix, ref_con):
+    """ Returns pixel location corresponding to CONEX location (xCon, yCon) given reference pixel ref_pix and reference
+    CONEX position ref_con """
     def func(x, slope, intercept):
         return x * slope + intercept
     # Pre-fall 2021 (ends with the 20210910 run)
@@ -106,14 +106,16 @@ def CONEX2PIXEL(xCon, yCon):
     # yopt = (68.5940592, 83.7997898)
 
     # Post-fall 2021 (starts with the 20211014 run)
-    xopt = (-67.03698001, 116.81715145)
-    yopt = (69.29451828, 66.30860825)
-    return np.asarray((func(xCon, *xopt), func(yCon, *yopt)))
+    # xopt = (-67.03698001, 116.81715145)
+    # yopt = (69.29451828, 66.30860825)
+    xopt = (slopes[0], ref_pix[0])
+    yopt = (slopes[1], ref_pix[1])
+    return np.asarray((func(xCon - ref_con[0], *xopt), func(yCon - ref_con[1], *yopt)))
 
 
-def compute_wcs_ref_pixel(position, reference=(0, 0), reference_pixel=(0, 0), instrument='mec'):
+def compute_wcs_ref_pixel(position, reference=(0, 0), reference_pixel=(0, 0), conex_deltas=(0, 0), instrument='mec'):
     """
-    A function to convert the connex offset to pixel displacement
+    A function to convert the conex offset to pixel displacement
 
     Params
     ------
@@ -135,7 +137,7 @@ def compute_wcs_ref_pixel(position, reference=(0, 0), reference_pixel=(0, 0), in
     if instrument.lower() != 'mec':
         raise NotImplementedError('MEC is only supported instrument.')
     #TODO this ::-1 flips the reference pixel. Why are we doing this?
-    return (CONEX2PIXEL(position[0], position[1]) - CONEX2PIXEL(*reference) + np.asarray(reference_pixel))[::-1]
+    return CONEX2PIXEL(position[0], position[1], slopes=conex_deltas, ref_pix=reference_pixel, ref_con=reference)[::-1]
 
 
 def roachnum(fl, band, instrument='MEC'):
