@@ -56,7 +56,7 @@ class FlagSet(object):
     def bitmask(self, flags, unknown='error'):
         """Return the bitmask corresponding to the flags"""
         if not flags:
-            return 0
+            return np.uint64(0)
         if isinstance(flags, str):
             flags = [flags]
 
