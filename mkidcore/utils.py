@@ -261,7 +261,7 @@ def get_obslogs(base, start=None):
 def find_clock_offsets(olog_data, dither, timezone=True, timezone_shift=7):
     """
     Takes in data from an obslog as a dict of {'key':<mkidcore.metadata.MetadataSeries>} and an
-    <mkidppipeline.definitions.MKIDDitherDescription> object to find any discrepancies in the clock synchronization
+    <mkidppipeline.definitions.MKIDDither> object to find any discrepancies in the clock synchronization
     between when the CONEX mirror was moved (from the obslog data) and when the dither believes that step in the
     sequence occurred.
     If timezone==True, <timezone_shift> hours (PT = UTC-7:00) will be subtracted from the UNIX timestamps
@@ -275,7 +275,7 @@ def find_clock_offsets(olog_data, dither, timezone=True, timezone_shift=7):
     def find_conex_time_from_dither_step(olog_xs, olog_ys, olog_ts, dither_step):
         """
         Takes in a list of conex x and y positions, a corresponding list of times, and a single dither step
-         <mkidppipeline.definitions.MKIDDitherDescription>.obs[step_number]
+         <mkidppipeline.definitions.MKIDDither>.obs[step_number]
 
         Returns the difference between the timestep that the conex logged is move at and the start of the dither step.
         If the conex moved before the step started this will be negative,
