@@ -47,7 +47,8 @@ class FlagSet(object):
 
     @property
     def names(self):
-        return tuple(sorted(self.flags.keys()))
+        bits = [i.bit for i in self.flags.values()]
+        return tuple(zip(*sorted(zip(bits, self.flags.keys()))))[1]
 
     @staticmethod
     def define(*flags):
