@@ -122,7 +122,7 @@ class Beammap(object):
             beammap - either a path to beammap file, instrument name, or
                 beammap object.
                     If path, loads data from beammap file.
-                    If instrument (either 'mec' or 'darkness'), loads corresponding
+                    If instrument (either 'mec', 'darkness', or 'xkid'), loads corresponding
                         default beammap.
                     If instance of Beammap, creates a copy
         """
@@ -214,9 +214,7 @@ class Beammap(object):
         self.freqpath = filepath
         powerSweeps = glob(filepath)
         if not powerSweeps:
-            raise FileNotFoundError(f'No powersweeps found matching {filepath}. Ensure the freqfiles keyword in the '
-                                    f'beammap specification (!bmap) will return desired powersweep files - wildcard will'
-                                    f'likely be necessary (i.e. /path/to/files/psData_*')
+            raise FileNotFoundError('No powersweeps found matching {}'.format(filepath))
         psData = np.loadtxt(powerSweeps[0])
         for sweep in powerSweeps[1:]:
             psData = np.concatenate((psData, np.loadtxt(sweep)))

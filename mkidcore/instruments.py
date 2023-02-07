@@ -8,10 +8,11 @@ import astropy.units
 
 MEC_FEEDLINE_INFO = dict(num=10, width=14, length=146)
 DARKNESS_FEEDLINE_INFO = dict(num=5, width=25, length=80)
+XKID_FEEDLINE_INFO = dict(num=5, width=25, length=80)
 
-FEEDLINE_INFO = {'mec': MEC_FEEDLINE_INFO, 'darkness':DARKNESS_FEEDLINE_INFO}
+FEEDLINE_INFO = {'mec': MEC_FEEDLINE_INFO, 'darkness':DARKNESS_FEEDLINE_INFO, 'xkid':XKID_FEEDLINE_INFO}
 
-DEFAULT_ARRAY_SIZES = {'mec': (140, 146), 'darkness': (80, 125)}
+DEFAULT_ARRAY_SIZES = {'mec': (140, 146), 'darkness': (80, 125), 'xkid': (80, 125)}
 
 
 MEC_NUM_FL_MAP = {228: '1a', 229: '1b', 238: '5a', 239: '5b', 220: '6a', 221: '6b',
@@ -23,17 +24,25 @@ DARKNESS_NUM_FL_MAP = {112: '1a', 114: '1b', 115: '5a', 116: '5b',
                        117: '6a', 118: '6b', 119: '7a', 120: '7b', 121: '8a',
                        122: '8b'}
 
+XKID_NUM_FL_MAP = {112: '5a', 114: '5b', 115: '2a', 116: '2b',
+                   117: '1a', 118: '1b', 119: '3a', 120: '3b', 121: '4a',
+                   122: '4b'}
+
 MEC_FL_NUM_MAP = {v: str(k) for k, v in MEC_NUM_FL_MAP.items()}
 
 DARKNESS_FL_NUM_MAP = {v: str(k) for k, v in MEC_NUM_FL_MAP.items()}
+
+XKID_FL_NUM_MAP = {v: str(k) for k, v in XKID_NUM_FL_MAP.items()}
 
 ROACHES = {'mec': MEC_NUM_FL_MAP.keys(), 'darkness': DARKNESS_NUM_FL_MAP.keys(),
            'bluefors': []}
 ROACHESA = {'mec': [k for k, v in MEC_NUM_FL_MAP.items() if 'a' in v],
             'darkness': [k for k, v in DARKNESS_NUM_FL_MAP.items() if 'a' in v],
+            'xkid': [k for k, v in XKID_NUM_FL_MAP.items() if 'a' in v],
             'bluefors': []}
 ROACHESB = {'mec': [k for k, v in MEC_NUM_FL_MAP.items() if 'b' in v],
             'darkness': [k for k, v in DARKNESS_NUM_FL_MAP.items() if 'b' in v],
+            'xkid': [k for k, v in XKID_NUM_FL_MAP.items() if 'b' in v],
             'bluefors': []}
 
 for k in list(ROACHES):
@@ -48,7 +57,11 @@ INSTRUMENT_INFO = {'mec': dict(deadtime_us=10, energy_bin_width_ev=0.1, minimum_
                                maximum_count_rate=5000, name='MEC'),
                    'darkness': dict(deadtime_us=10, energy_bin_width_ev=0.1, minimum_wavelength=700,
                                     maximum_wavelength=1500, nominal_platescale_mas=10.4, device_orientation_deg=0,
-                                    maximum_count_rate=5000, name='DARKNESS')}
+                                    maximum_count_rate=5000, name='DARKNESS'),
+                   'xkid': dict(deadtime_us=10, energy_bin_width_ev=0.1, minimum_wavelength=700,
+                                    maximum_wavelength=1500, nominal_platescale_mas=10.4, device_orientation_deg=0,
+                                    maximum_count_rate=5000, name='XKID')
+                   }
 
 
 class InstrumentInfo(mkidcore.config.ConfigThing):
@@ -143,6 +156,8 @@ def compute_wcs_ref_pixel(position, reference=(0, 0), reference_pixel=(0, 0), co
 def roachnum(fl, band, instrument='MEC'):
     if instrument.lower() == 'darkness':
         return DARKNESS_FL_NUM_MAP['{}{}'.format(fl, band)]
+    elif instrument.lower() == 'xkid':
+        return XKID_FL_NUM_MAP['{}{}'.format(fl, band)]
     elif instrument.lower() == 'mec':
         return MEC_FL_NUM_MAP['{}{}'.format(fl, band)]
 
