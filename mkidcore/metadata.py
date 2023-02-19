@@ -141,8 +141,8 @@ class KeyInfo(object):
         return Card(keyword=self.name, value=self.default, comment=self.description)
 
 
-def _parse_mec_keys():
-    with open(pkg.resource_filename('mkidcore', 'mec_keys.csv')) as f:
+def _parse_inst_keys(csv):
+    with open(pkg.resource_filename('mkidcore', csv)) as f:
         data = [row for row in csv.reader(f)]
 
     data = [{k.strip().lower().replace(' ', '_').replace('?', ''): v.strip() for k, v in zip(data[0], l)} for l in
@@ -168,8 +168,11 @@ def _parse_mec_keys():
     return {k['fits_card']: KeyInfo(**k) for k in data if k['fits_card'] not in _FITS_STD}
 
 
-MEC_KEY_INFO = _parse_mec_keys()
-DEFAULT_CARDSET = {k: v.fits_card for k, v in MEC_KEY_INFO.items()}
+MEC_KEY_INFO = _parse_inst_keys('mec_keys.csv')
+XKID_KEY_INFO = _parse_inst_keys('xkid_keys.csv')
+DEFAULT_MEC_CARDSET = {k: v.fits_card for k, v in MEC_KEY_INFO.items()}
+DEFAULT_XKID_CARDSET = {k: v.fits_card for k, v in MEC_KEY_INFO.items()}
+DEFAULT_CARDSET = DEFAULT_MEC_CARDSET
 _metadata = {'files': [], 'data': defaultdict(MetadataSeries)}
 
 
@@ -296,8 +299,44 @@ def observing_metadata_for_timerange(start, duration, metadata_source=None):
                          '\n\t'.join(missing))
     return ret
 
+TIME_KEYS = ('HST-END', 'HST-STR', 'MJD-END', 'MJD-STR', 'UT-END', 'UT-STR')
 
-def build_header(metadata=None, unknown_keys='error'):
+
+def _mec_time_header(unix_start, unix_stop, metadata):
+    hst = TimezoneInfo(utc_offset=-10 * u.hour)
+    t1 = Time(unix_start, format='unix')
+    t2 = Time(unix_stop, format='unix')
+    dt1 = datetime.fromtimestamp(t1.value, tz=hst)
+    dt2 = datetime.fromtimestamp(t2.value, tz=hst)
+    metadata['HST-END'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt2.hour, dt2.day, dt2.second, dt2.microsecond)
+    metadata['HST-STR'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt1.hour, dt1.day, dt1.second, dt1.microsecond)
+    metadata['MJD-END'] = t2.mjd
+    metadata['MJD-STR'] = t1.mjd
+    metadata['UT-END'] = t2.iso[-12:-1]
+    metadata['UT-STR'] = t1.iso[-12:-1]
+    return metadata
+
+
+def _xkid_time_header(unix_start, unix_stop, metadata):
+    t1 = Time(unix_start, format='unix')
+    t2 = Time(unix_stop, format='unix')
+    # hst = TimezoneInfo(utc_offset=-10 * u.hour)
+    # dt1 = datetime.fromtimestamp(t1.value, tz=hst)
+    # dt2 = datetime.fromtimestamp(t2.value, tz=hst)
+    # metadata['HST-END'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt2.hour, dt2.day, dt2.second, dt2.microsecond)
+    # metadata['HST-STR'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt1.hour, dt1.day, dt1.second, dt1.microsecond)
+    metadata['MJD-END'] = t2.mjd
+    metadata['MJD-STR'] = t1.mjd
+    metadata['UT-END'] = t2.iso[-12:-1]
+    metadata['UT-STR'] = t1.iso[-12:-1]
+    return metadata
+
+
+_time_key_builder = _mec_time_header
+
+
+def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=MEC_KEY_INFO,
+                 DEFAULT_CARDSET=DEFAULT_CARDSET):
     """ Build a header with all of the keys and their default values with optional updates via metadata. Additional
     novel cards may be included via metadata as well.
 
@@ -305,33 +344,27 @@ def build_header(metadata=None, unknown_keys='error'):
 
     raises ValueError if any novel keyword is not a Card
     """
+    global TIME_KEYS
     if metadata is not None:
         unix_start = metadata['UNIXSTR']
         unix_stop = metadata['UNIXEND']
-        TIME_KEYS = ('HST-END', 'HST-STR', 'MJD-END', 'MJD-STR', 'UT-END', 'UT-STR')
         if not unix_start and not unix_stop:
             assert [metadata[key] is not None for key in
                     TIME_KEYS], 'header must contain UNIXSTR, UNIXEND or all of {}'.format(TIME_KEYS)
         else:
-            hst = TimezoneInfo(utc_offset=-10 * u.hour)
-            t1 = Time(unix_start, format='unix')
-            t2 = Time(unix_stop, format='unix')
-            dt1 = datetime.fromtimestamp(t1.value, tz=hst)
-            dt2 = datetime.fromtimestamp(t2.value, tz=hst)
-            metadata['HST-END'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt2.hour, dt2.day, dt2.second, dt2.microsecond)
-            metadata['HST-STR'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt1.hour, dt1.day, dt1.second, dt1.microsecond)
-            metadata['MJD-END'] = t2.mjd
-            metadata['MJD-STR'] = t1.mjd
-            metadata['UT-END'] = t2.iso[-12:-1]
-            metadata['UT-STR'] = t1.iso[-12:-1]
+            metadata = _time_key_builder(unix_start, unix_stop, metadata)
 
-        if 'OBJECT' in metadata and ('RA' not in metadata or 'DEC' not in metadata):
+        if 'OBJECT' in metadata and ('RA' not in metadata or 'DEC' not in metadata) and use_simbad:
             getLogger(__name__).info('Fetching coordinates from simbad')
             try:
                 sc = SkyCoord.from_name(metadata['OBJECT']).transform_to(frame=astropy.coordinates.FK5(equinox='J2000'))
                 metadata.update({'RA': sc.ra.hourangle, 'DEC': sc.dec.deg, 'EQUINOX': 'J2000'})
             except Exception:
                 getLogger(__name__).warning('Unable to get coordinates for {}'.format(metadata['OBJECT']))
+        elif 'RA' not in metadata or 'DEC' not in metadata:
+            metadata['RA']=0.0
+            metadata['DEC']=0.0
+            metadata['EQUINOX']='J2000'
 
     novel = set(metadata.keys()).difference(set(DEFAULT_CARDSET.keys()))
     bad = [k for k in novel if not isinstance(metadata[k], Card)]
@@ -349,7 +382,7 @@ def build_header(metadata=None, unknown_keys='error'):
     if metadata is not None:
         for k in metadata:
             try:
-                val = metadata[k].to(MEC_KEY_INFO[k].unit).value
+                val = metadata[k].to(KEY_INFO[k].unit).value
             except AttributeError:
                 val = metadata[k]
             except ValueError:
