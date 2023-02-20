@@ -108,23 +108,94 @@ class CalFactory(object):
 
         mask will be applied to output products if specified and must match the shape of the images
         """
-        self.images = list(images)
-        self.dark = dark
-        self.flat = flat
+        self._images = None
+        self.images = images
+        self._dark = [dark]
+        self._flat = [flat]
         self.kind = kind.lower()
-        self.mask = mask
+        self._mask = [mask]
 
     def reset(self, image0, **kwargs):
-        """kwords are same as for __init__"""
+        """kwargs are same as for __init__"""
         for k, v in kwargs.items():
             setattr(self, k, v)
 
     def add_image(self, image):
         getLogger(__name__).debug('Adding image to {} calfactory'.format(self.kind))
-        self.images.append(image)
+        self._images.append(image)
+
+    @property
+    def images(self):
+        return self._images
+
+    @images.setter
+    def images(self, x):
+        if not isinstance(x, (list, tuple)):
+            images = (x,)
+        self._images = list(images)
+
+    def _file_data_thing(self, thing, defaultgen):
+        if len(thing) == 1:
+            if thing[0] is None:
+                thing.append(defaultgen(self._images[0]))
+            elif isinstance(thing[0], str):
+                thing.append(fits.getdata(thing[0]))
+            else:
+                thing.append(thing[0].data)
+        return thing[1]
+
+    def _thing_name(self, thing):
+        if thing[0] is None:
+            return 'None'
+        elif isinstance(thing[0], str):
+            return os.path.basename(thing[0])
+        else:
+            return thing[0].header['filename']
+
+    @property
+    def darkdata(self):
+        return self._file_data_thing(self._dark, np.zeros_like)
+
+    @property
+    def flatdata(self):
+        return self._file_data_thing(self._flat, np.ones_like)
+
+    @property
+    def maskdata(self):
+        return self._file_data_thing(self._mask, lambda x: np.zeros_like(x, dtype=bool))
+
+    @property
+    def darkname(self):
+        return self._thing_name(self._dark)
+
+    @property
+    def flatname(self):
+        return self._thing_name(self._flat)
+
+    @property
+    def maskname(self):
+        return self._thing_name(self._mask)
+
+    @dark.setter
+    def dark(self, x):
+        """ x may be None a file name, or an imageHDU with the header key filename and matching data size"""
+        if x != self._dark[0]:
+            self._dark[:] = [x]
+
+    @flat.setter
+    def flat(self, x):
+        """ x may be None a file name, or an imageHDU with the header key filename and matching data size"""
+        if x != self._flat[0]:
+            self._flat[:] = [x]
+
+    @mask.setter
+    def mask(self, x):
+        """ x may be None a file name, or an imageHDU with the header key filename and matching data size"""
+        if x != self._mask[0]:
+            self._mask[:] = [x]
 
     def generate(self, fname='calib.fits', name='calimage', badmask=None, dtype=float, bias=0, header={},
-                 threaded=False, save=False, overwrite=False, maskvalue=np.nan):
+                 threaded=False, save=False, overwrite=False, maskvalue=np.nan, store_complete=None):
 
         tic = time.time()
         spawn = isinstance(threaded, bool) and threaded
@@ -138,7 +209,8 @@ class CalFactory(object):
         if spawn:
             q = Queue()
             t = Thread(target=self.generate, args=tuple(), kwargs=dict(fname=fname, name=name, badmask=badmask,
-                                                                       dtype=dtype, threaded=q, save=save))
+                                                                       dtype=dtype, threaded=q, save=save,
+                                                                       store_complete=store_complete))
             t.start()
             return q
 
@@ -146,33 +218,27 @@ class CalFactory(object):
         idata = [i.data for i in self.images]
 
         ret = fits.PrimaryHDU(data=self.images[0].data.astype(dtype), header=self.images[0].header)
-
         ret.header.update(header)
 
         if self.kind == 'dark':
             ret.data = makedark(idata, et)
         elif self.kind == 'flat':
-            d = np.zeros_like(ret.data) if self.dark is None else self.dark.data
-            ret.data = makeflat(idata, d, et, badmask=badmask)
-            ret.header['darkfile'] = None if self.dark is None else self.dark.header['filename']
+            ret.data = makeflat(idata, self.darkdata, et, badmask=badmask)
+            ret.header['darkfile'] = self.darkname
         elif self.kind[:3] == 'avg':
-            d = np.zeros_like(ret.data) if self.dark is None else self.dark.data
-            f = np.ones_like(ret.data) if self.flat is None else self.flat.data
+            d = self.darkdata
+            f = self.flatdata
             ret.data = (np.sum(idata, axis=0, dtype=float)/et - d)
             ret.data /= f
-            # previously the flat was only applied at nonzero pixels
-            # e.g. ret.data[ret.data>0] *= f[ret.data>0]
-            ret.header['flatfile'] = None if self.flat is None else self.flat.header['filename']
-            ret.header['darkfile'] = None if self.dark is None else self.dark.header['filename']
+            ret.header['flatfile'] = self.flatname
+            ret.header['darkfile'] = self.darkname
         elif self.kind[:3] == 'sum':
-            d = np.zeros_like(ret.data) if self.dark is None else self.dark.data
-            f = np.ones_like(ret.data) if self.flat is None else self.flat.data
+            d = self.darkdata
+            f = self.flatdata
             ret.data = np.sum(idata, axis=0, dtype=float) - d*len(idata)
             ret.data /= f
-            # previously the flat was only applied at nonzero pixels
-            # e.g. ret.data[ret.data>0] *= f[ret.data>0]
-            ret.header['flatfile'] = None if self.flat is None else self.flat.header['filename']
-            ret.header['darkfile'] = None if self.dark is None else self.dark.header['filename']
+            ret.header['darkfile'] = self.darkname
+            ret.header['flatfile'] = self.flatname
 
         ret.data += bias
         ret.header['bias'] = bias
@@ -181,8 +247,7 @@ class CalFactory(object):
         ret.header['filename'] = os.path.splitext(os.path.basename(fname))[0]+'.fits'
         ret.header['name'] = name
 
-        if self.mask is not None:
-            ret.data[self.mask] = maskvalue
+        ret.data[self.maskdata] = maskvalue
 
         if save:
             getLogger(__name__).debug('Saving fits to {}'.format(fname))
@@ -190,9 +255,10 @@ class CalFactory(object):
 
         getLogger(__name__).debug('Generation took {:.1f} ms'.format((time.time()-tic)*1000))
 
+        if store_complete:
+            store_complete[0].store(store_complete[0], fname)
+
         if isinstance(threaded, Queue):
             threaded.put(ret)
         else:
             return ret
-
-
