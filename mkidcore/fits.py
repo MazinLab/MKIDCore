@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from multiprocessing.pool import ThreadPool
 from threading import Thread
-from Queue import Queue
+from queue import Queue
 import time
 from mkidcore.corelog import getLogger
 
