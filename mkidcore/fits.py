@@ -115,7 +115,7 @@ class CalFactory(object):
         self.kind = kind.lower()
         self._mask = [mask]
 
-    def reset(self, image0, **kwargs):
+    def reset(self, **kwargs):
         """kwargs are same as for __init__"""
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -132,6 +132,8 @@ class CalFactory(object):
     def images(self, x):
         if not isinstance(x, (list, tuple)):
             images = (x,)
+        else:
+            images = x
         self._images = list(images)
 
     def _file_data_thing(self, thing, defaultgen):
