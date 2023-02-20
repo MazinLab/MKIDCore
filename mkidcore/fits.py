@@ -176,6 +176,18 @@ class CalFactory(object):
     def maskname(self):
         return self._thing_name(self._mask)
 
+    @property
+    def dark(self):
+        return self._dark
+
+    @property
+    def flat(self):
+        return self._flat
+
+    @property
+    def mask(self):
+        return self._mask
+
     @dark.setter
     def dark(self, x):
         """ x may be None a file name, or an imageHDU with the header key filename and matching data size"""
