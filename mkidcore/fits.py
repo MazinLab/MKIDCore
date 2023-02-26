@@ -4,7 +4,10 @@ import os
 from datetime import datetime
 from multiprocessing.pool import ThreadPool
 from threading import Thread
-from queue import Queue
+try:
+    from queue import Queue
+except ImportError:
+    from Queue import Queue
 import time
 from mkidcore.corelog import getLogger
 
@@ -115,7 +118,7 @@ class CalFactory(object):
         self.kind = kind.lower()
         self._mask = [mask]
 
-    def reset(self, **kwargs):
+    def reset(self, image0, **kwargs):
         """kwargs are same as for __init__"""
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -132,8 +135,6 @@ class CalFactory(object):
     def images(self, x):
         if not isinstance(x, (list, tuple)):
             images = (x,)
-        else:
-            images = x
         self._images = list(images)
 
     def _file_data_thing(self, thing, defaultgen):
@@ -155,15 +156,15 @@ class CalFactory(object):
             return thing[0].header['filename']
 
     @property
-    def darkdata(self):
+    def dark(self):
         return self._file_data_thing(self._dark, np.zeros_like)
 
     @property
-    def flatdata(self):
+    def flat(self):
         return self._file_data_thing(self._flat, np.ones_like)
 
     @property
-    def maskdata(self):
+    def mask(self):
         return self._file_data_thing(self._mask, lambda x: np.zeros_like(x, dtype=bool))
 
     @property
@@ -177,18 +178,6 @@ class CalFactory(object):
     @property
     def maskname(self):
         return self._thing_name(self._mask)
-
-    @property
-    def dark(self):
-        return self._dark
-
-    @property
-    def flat(self):
-        return self._flat
-
-    @property
-    def mask(self):
-        return self._mask
 
     @dark.setter
     def dark(self, x):
@@ -237,18 +226,18 @@ class CalFactory(object):
         if self.kind == 'dark':
             ret.data = makedark(idata, et)
         elif self.kind == 'flat':
-            ret.data = makeflat(idata, self.darkdata, et, badmask=badmask)
+            ret.data = makeflat(idata, self.dark, et, badmask=badmask)
             ret.header['darkfile'] = self.darkname
         elif self.kind[:3] == 'avg':
-            d = self.darkdata
-            f = self.flatdata
+            d = self.dark
+            f = self.flat
             ret.data = (np.sum(idata, axis=0, dtype=float)/et - d)
             ret.data /= f
             ret.header['flatfile'] = self.flatname
             ret.header['darkfile'] = self.darkname
         elif self.kind[:3] == 'sum':
-            d = self.darkdata
-            f = self.flatdata
+            d = self.dark
+            f = self.flat
             ret.data = np.sum(idata, axis=0, dtype=float) - d*len(idata)
             ret.data /= f
             ret.header['darkfile'] = self.darkname
@@ -261,7 +250,7 @@ class CalFactory(object):
         ret.header['filename'] = os.path.splitext(os.path.basename(fname))[0]+'.fits'
         ret.header['name'] = name
 
-        ret.data[self.maskdata] = maskvalue
+        ret.data[self.mask] = maskvalue
 
         if save:
             getLogger(__name__).debug('Saving fits to {}'.format(fname))

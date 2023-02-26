@@ -141,8 +141,8 @@ class KeyInfo(object):
         return Card(keyword=self.name, value=self.default, comment=self.description)
 
 
-def _parse_inst_keys(csv):
-    with open(pkg.resource_filename('mkidcore', csv)) as f:
+def _parse_inst_keys(csv_file):
+    with open(pkg.resource_filename('mkidcore', csv_file)) as f:
         data = [row for row in csv.reader(f)]
 
     data = [{k.strip().lower().replace(' ', '_').replace('?', ''): v.strip() for k, v in zip(data[0], l)} for l in

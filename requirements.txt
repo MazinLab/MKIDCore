@@ -1,0 +1,4 @@
+astroplan
+astropy
+numpy
+scipys

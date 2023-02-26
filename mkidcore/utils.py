@@ -16,6 +16,15 @@ _manager = None
 _datadircache = {}
 
 
+def next_utc_second():
+    """Return the next UTC second"""
+    x = datetime.utcnow()
+    x = round(x.hour * 3600 + x.minute * 60 + x.second + x.microsecond + .5)
+    if x >= 24 * 3600:
+        x = 0
+    return x
+
+
 def mjd_to(mjd, zone):
     from astropy.time import Time
     from pytz import timezone
