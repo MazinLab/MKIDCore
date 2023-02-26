@@ -11,21 +11,24 @@ mkidbin_extension = Extension(
     name="mkidcore.binfile.mkidbin",
     sources=["mkidcore/binfile/mkidbin.pyx", "mkidcore/binfile/binprocessor.c"],
     library_dirs=["mkidcore/binfile"],  # Location of .o file
-    include_dirs=["mkidcore/binfile", numpy.get_include()], # Location of the .h file
+    include_dirs=["mkidcore/binfile", numpy.get_include()],  # Location of the .h file
     extra_compile_args=["-std=c99", "-O3", '-pthread']
 )
 
 
 class CustomInstall(install, object):
     """Custom handler for the 'install' command."""
+
     def run(self):
-        super(CustomInstall,self).run()
+        super(CustomInstall, self).run()
 
 
 class CustomDevelop(develop, object):
     """Custom handler for the 'install' command."""
+
     def run(self):
-        super(CustomDevelop,self).run()
+        super(CustomDevelop, self).run()
+
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -47,10 +50,6 @@ setuptools.setup(
         "Operating System :: POSIX",
         "Development Status :: 1 - Planning",
         "Intended Audience :: Science/Research"),
-    zip_safe = False,
-    cmdclass = {'install': CustomInstall, 'develop': CustomDevelop}
+    zip_safe=False,
+    cmdclass={'install': CustomInstall, 'develop': CustomDevelop}
 )
-
-
-
-
