@@ -198,7 +198,7 @@ class CalFactory(object):
             self._mask[:] = [x]
 
     def generate(self, fname='calib.fits', name='calimage', badmask=None, dtype=float, bias=0, header={},
-                 threaded=False, save=False, overwrite=False, maskvalue=np.nan, store_complete=None):
+                 threaded=False, save=False, overwrite=False, maskvalue=np.nan, complete_callback=None):
 
         tic = time.time()
         spawn = isinstance(threaded, bool) and threaded
@@ -213,7 +213,7 @@ class CalFactory(object):
             q = Queue()
             t = Thread(target=self.generate, args=tuple(), kwargs=dict(fname=fname, name=name, badmask=badmask,
                                                                        dtype=dtype, threaded=q, save=save,
-                                                                       store_complete=store_complete))
+                                                                       complete_callback=complete_callback))
             t.start()
             return q
 
@@ -258,8 +258,8 @@ class CalFactory(object):
 
         getLogger(__name__).debug('Generation took {:.1f} ms'.format((time.time()-tic)*1000))
 
-        if store_complete:
-            store_complete[0].store(store_complete[0], fname)
+        if complete_callback:
+            complete_callback(fname)
 
         if isinstance(threaded, Queue):
             threaded.put(ret)
