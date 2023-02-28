@@ -171,7 +171,7 @@ def _parse_inst_keys(csv_file):
 MEC_KEY_INFO = _parse_inst_keys('mec_keys.csv')
 XKID_KEY_INFO = _parse_inst_keys('xkid_keys.csv')
 DEFAULT_MEC_CARDSET = {k: v.fits_card for k, v in MEC_KEY_INFO.items()}
-DEFAULT_XKID_CARDSET = {k: v.fits_card for k, v in MEC_KEY_INFO.items()}
+DEFAULT_XKID_CARDSET = {k: v.fits_card for k, v in XKID_KEY_INFO.items()}
 DEFAULT_CARDSET = DEFAULT_MEC_CARDSET
 _metadata = {'files': [], 'data': defaultdict(MetadataSeries)}
 
@@ -340,6 +340,8 @@ def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=
     """ Build a header with all of the keys and their default values with optional updates via metadata. Additional
     novel cards may be included via metadata as well.
 
+    unknow_keys='create' may be used to hack in keys during testing
+
     metadata is a dict of keyword:value|Card pairs. Value for keys in the default cardset, Cards for novel keywords.
 
     raises ValueError if any novel keyword is not a Card
@@ -386,6 +388,10 @@ def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=
             raise ValueError(msg)
         elif unknown_keys == 'warn':
             getLogger(__name__).warning(msg+' for inclusion.')
+        elif unknown_keys == 'create':
+            for k in bad:
+                metadata[k] = Card(keyword=k, value=metadata[k], comment='No Description')
+            bad = []
         for k in bad:
             metadata.pop(k)
 
