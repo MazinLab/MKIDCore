@@ -358,13 +358,24 @@ def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=
             getLogger(__name__).info('Fetching coordinates from simbad')
             try:
                 sc = SkyCoord.from_name(metadata['OBJECT']).transform_to(frame=astropy.coordinates.FK5(equinox='J2000'))
-                metadata.update({'RA': sc.ra.hourangle, 'DEC': sc.dec.deg, 'EQUINOX': 'J2000'})
+                metadata.update({'RA': sc.ra.hourangle, 'DEC': sc.dec.deg, 'EQUINOX': 'J2000', 'EPOCH': 'J2000'})
             except Exception:
                 getLogger(__name__).warning('Unable to get coordinates for {}'.format(metadata['OBJECT']))
         elif 'RA' not in metadata or 'DEC' not in metadata:
             metadata['RA']=0.0
             metadata['DEC']=0.0
             metadata['EQUINOX']='J2000'
+            metadata['EPOCH'] = 'J2000'
+
+    try:
+        metadata['EQUINOX'] = metadata['EPOCH']
+    except KeyError:
+        pass
+
+    try:
+        metadata['EPOCH'] = metadata['EQUINOX']
+    except KeyError:
+        pass
 
     novel = set(metadata.keys()).difference(set(DEFAULT_CARDSET.keys()))
     bad = [k for k in novel if not isinstance(metadata[k], Card)]
