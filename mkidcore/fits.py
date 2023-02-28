@@ -134,8 +134,8 @@ class CalFactory(object):
     @images.setter
     def images(self, x):
         if not isinstance(x, (list, tuple)):
-            images = (x,)
-        self._images = list(images)
+            x = (x,)
+        self._images = list(x)
 
     def _file_data_thing(self, thing, defaultgen):
         if len(thing) == 1:
