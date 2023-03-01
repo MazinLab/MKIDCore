@@ -16,9 +16,8 @@ _manager = None
 _datadircache = {}
 
 
-def next_utc_second():
-    """Return the next UTC second"""
-    x = datetime.utcnow()
+def next_second(x: datetime):
+    """Return the next second"""
     x = round(x.hour * 3600 + x.minute * 60 + x.second + x.microsecond + .5)
     if x >= 24 * 3600:
         x = 0
