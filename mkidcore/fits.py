@@ -77,6 +77,8 @@ def makeflat(images, dark, et, badmask=None):
     data /= et
     if badmask is not None:
         data[badmask] = 0
+    if not data.nonzero()[0].size:
+        return data
     med = np.median(data[data > 0])
     flat = data / med
     flat[flat <= 0] = np.amin(flat[flat > 0])
