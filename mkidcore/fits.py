@@ -139,17 +139,14 @@ class CalFactory(object):
 
     def _file_data_thing(self, thing, defaultgen):
         if len(thing) == 1:
-            if thing[0] is None:
-                thing.append(defaultgen(self._images[0]))
+            if thing[0] is None or thing[0] is '':
+                thing.append(defaultgen(self._images[0].data))
             elif isinstance(thing[0], str):
-                if not thing[0]:
-                    thing.append(defaultgen(self._images[0]))
-                else:
-                    try:
-                        thing.append(fits.getdata(thing[0]))
-                    except (IOError, OSError):
-                        getLogger(__name__).warning(f'Unable to load {thing[0]}, using zeros.')
-                        return defaultgen(self._images[0])
+                try:
+                    thing.append(fits.getdata(thing[0]))
+                except (IOError, OSError):
+                    getLogger(__name__).warning(f'Unable to load {thing[0]}, using zeros.')
+                    return defaultgen(self._images[0].data)
             else:
                 thing.append(thing[0].data)
         return thing[1]
