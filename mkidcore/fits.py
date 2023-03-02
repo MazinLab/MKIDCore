@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from multiprocessing.pool import ThreadPool
 from threading import Thread
+
 try:
     from queue import Queue
 except ImportError:
@@ -12,11 +13,10 @@ import time
 from mkidcore.corelog import getLogger
 
 from collections import namedtuple
+
 ImgTuple = namedtuple('img', ['data', 'file', 'time'])
 
 _pool = None
-
-
 
 
 def loadimg(file, ncol, nrow, **kwargs):
@@ -66,7 +66,7 @@ def summarize(hdu):
 
 
 def makedark(images, et, badmask=None):
-    data = np.sum(images, axis=0)/et
+    data = np.sum(images, axis=0) / et
     if badmask is not None:
         data[badmask] = 0
     return data
@@ -76,15 +76,15 @@ def makeflat(images, dark, et, badmask=None):
     data = np.sum([i - dark for i in images], axis=0, dtype=float)
     data /= et
     if badmask is not None:
-        data[badmask]=0
-    med = np.median(data[data>0])
-    flat = data/med
-    flat[flat<=0] = np.amin(flat[flat>0])
+        data[badmask] = 0
+    med = np.median(data[data > 0])
+    flat = data / med
+    flat[flat <= 0] = np.amin(flat[flat > 0])
     return flat
 
 
 def _combineHDU(images, header={}, fname='file.fits', name='image', save=True):
-    ret = fits.HDUList([fits.PrimaryHDU()]+list(images))  # Primaryhdu empty per fits std. doesn't REALLY matter
+    ret = fits.HDUList([fits.PrimaryHDU()] + list(images))  # Primaryhdu empty per fits std. doesn't REALLY matter
     ret[0].header['filename'] = os.path.basename(fname)
     ret[0].header['name'] = os.path.basename(name)
     ret[0].header.update(header)
@@ -142,7 +142,14 @@ class CalFactory(object):
             if thing[0] is None:
                 thing.append(defaultgen(self._images[0]))
             elif isinstance(thing[0], str):
-                thing.append(fits.getdata(thing[0]))
+                if not thing[0]:
+                    thing.append(defaultgen(self._images[0]))
+                else:
+                    try:
+                        thing.append(fits.getdata(thing[0]))
+                    except (IOError, OSError):
+                        getLogger(__name__).warning(f'Unable to load {thing[0]}, using zeros.')
+                        return defaultgen(self._images[0])
             else:
                 thing.append(thing[0].data)
         return thing[1]
@@ -204,16 +211,17 @@ class CalFactory(object):
         spawn = isinstance(threaded, bool) and threaded
 
         sv = ' Will save to {}'.format(fname) if save else ''
-        getLogger(__name__).debug(('Generating "{}" from {} images using method {} in {} thread.'+
+        getLogger(__name__).debug(('Generating "{}" from {} images using method {} in {} thread.' +
                                    sv).format(name, len(self.images), self.kind, ('a new' if spawn else 'this')))
         if not self.images:
             return None
 
         if spawn:
             q = Queue()
-            t = Thread(target=self.generate, args=tuple(), kwargs=dict(fname=fname, name=name, badmask=badmask,
-                                                                       dtype=dtype, threaded=q, save=save,
-                                                                       complete_callback=complete_callback))
+            t = Thread(name='CalFactory Saver', target=self.generate, args=tuple(),
+                       kwargs=dict(fname=fname, name=name, badmask=badmask,
+                                   dtype=dtype, threaded=q, save=save,
+                                   complete_callback=complete_callback))
             t.start()
             return q
 
@@ -231,14 +239,14 @@ class CalFactory(object):
         elif self.kind[:3] == 'avg':
             d = self.dark
             f = self.flat
-            ret.data = (np.sum(idata, axis=0, dtype=float)/et - d)
+            ret.data = (np.sum(idata, axis=0, dtype=float) / et - d)
             ret.data /= f
             ret.header['flatfile'] = self.flatname
             ret.header['darkfile'] = self.darkname
         elif self.kind[:3] == 'sum':
             d = self.dark
             f = self.flat
-            ret.data = np.sum(idata, axis=0, dtype=float) - d*len(idata)
+            ret.data = np.sum(idata, axis=0, dtype=float) - d * len(idata)
             ret.data /= f
             ret.header['darkfile'] = self.darkname
             ret.header['flatfile'] = self.flatname
@@ -247,7 +255,7 @@ class CalFactory(object):
         ret.header['bias'] = bias
         ret.header['exptime'] = et
         ret.header['objtype'] = self.kind
-        ret.header['filename'] = os.path.splitext(os.path.basename(fname))[0]+'.fits'
+        ret.header['filename'] = os.path.splitext(os.path.basename(fname))[0] + '.fits'
         ret.header['name'] = name
 
         ret.data[self.mask] = maskvalue
@@ -256,7 +264,7 @@ class CalFactory(object):
             getLogger(__name__).debug('Saving fits to {}'.format(fname))
             ret.writeto(fname, overwrite=overwrite)
 
-        getLogger(__name__).debug('Generation took {:.1f} ms'.format((time.time()-tic)*1000))
+        getLogger(__name__).debug('Generation took {:.1f} ms'.format((time.time() - tic) * 1000))
 
         if complete_callback:
             complete_callback(fname)
