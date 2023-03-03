@@ -98,7 +98,7 @@ magaox:fwpupil:name,AOPUPNAM,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X Coronagraph 
 magaox:fwpupil:counts,AOPUPPOS,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X Coronagraph Pupil Pos,,,fwpupil.counts.current
 magaox:fwfpm:name,AOFPMNAM,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X Coronagraph FPM Name,,,fwfpm.filterName.XXX
 magaox:fwfpm:counts,AOFPMPOS,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X Coronagraph FPM Pos.,,,fwfpm.counts.current
-magaox:fwlyot:name,AOLYTNAM,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X Lyot Coronagraph Name,,,fwlyot.filterName.XXXX
+magaox:fwlyot:name,AOLYTNAM,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X Lyot Coronagraph Name,,,fwlyot.filterName.XXX
 magaox:fwlyot:counts,AOLYTPOS,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X Lyot Coronagraph Pos,,,fwlyot.counts.current
 magaox:tweeterSpeck:modulating,AOTWMODU,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X DM Modulation,,,tweeterSpeck.modulating.toggle
 magaox:tweeterSpeck:trigger,AOTWTRIG,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X DM Triggered,,,tweeterSpeck.trigger.toggle
