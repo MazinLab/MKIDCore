@@ -19,6 +19,11 @@ from astroplan import Observer
 
 from mkidcore.corelog import getLogger
 
+
+MEC_TIME_KEYS = ('HST-END', 'HST-STR', 'MJD-END', 'MJD-STR', 'UT-END', 'UT-STR')
+XKID_TIME_KEYS = ('MJD', 'MJD-END', 'MJD-STR', 'UNIXEND', 'UNIXSTR', 'UT', 'UT-END', 'UT-STR')
+TIME_KEYS = MEC_TIME_KEYS
+
 PIPELINE_KEYS = ('E_BASELI', 'E_BMAP', 'E_CFGHSH', 'E_FLTCAL', 'E_GITHSH', 'E_H5FILE',
                  'E_SPECAL', 'E_WAVCAL', 'E_WCSCAL')
 
@@ -29,7 +34,8 @@ _LEGACY_OBSLOG_MAP = {"comment": "comment", "el": "ALTITUDE", "equinox": "EQUINO
                       "instrument": "INSTRUME", "device_orientation": "E_DEVANG", "ra": "RA", "airmass": "AIRMASS",
                       "dither_pos": ("E_CONEXX", "E_CONEXY"), "dither_ref": ("E_CXREFX", "E_CXREFY"),
                       "parallactic": 'D_IMRPAD',
-                      'd_imrpad': 'D_IMRPAD', "ut": "UT",  #NB these two keys were updated in readout so they may be present here
+                      'd_imrpad': 'D_IMRPAD', "ut": "UT",
+                      # NB these two keys were updated in readout so they may be present here
                       "ha": None, "utc": "UTC-STR", "observatory": "OBSERVAT", "laser": None, "target": "OBJECT",
                       "filter": "E_FLTPOS", "dither_home": ("E_PREFX", "E_PREFY"), "platescale": "E_PLTSCL",
                       "flipper": "E_FLPPOS", "dec": "DEC"}
@@ -49,8 +55,8 @@ class MetadataSeries(object):
         """Caution will happily overwrite duplicate times"""
         ndx = bisect(self.times, time)
         if ndx != 0 and self.times[ndx - 1] == time:
-            getLogger(__name__).debug("Replacing {} with {} at {}".format(self.values[ndx-1], value, time))
-            self.values[ndx-1] = value
+            getLogger(__name__).debug("Replacing {} with {} at {}".format(self.values[ndx - 1], value, time))
+            self.values[ndx - 1] = value
         else:
             self.times.insert(ndx, time)
             self.values.insert(ndx, value)
@@ -85,8 +91,8 @@ class MetadataSeries(object):
         try:
             return np.asarray(self.values)[delta < 0][-1] if preceeding else self.values[np.abs(delta).argmin()]
         except IndexError:
-            raise ValueError('No metadata available for {}, records from '.format(timestamp)+
-                             '{} to {}'.format(min(self.times),max(self.times)))
+            raise ValueError('No metadata available for {}, records from '.format(timestamp) +
+                             '{} to {}'.format(min(self.times), max(self.times)))
 
     def range(self, time, duration):
         """
@@ -135,13 +141,15 @@ class KeyInfo(object):
                 pass
         self.__dict__.update(kwargs)
 
-
     @property
     def fits_card(self):
         return Card(keyword=self.name, value=self.default, comment=self.description)
 
 
 def _parse_inst_keys(csv_file):
+    """ spaces to _ ? to null strip whitespace, keys are column 0 values are dict of other columns
+    all keys forced to lower case
+    """
     with open(pkg.resource_filename('mkidcore', csv_file)) as f:
         data = [row for row in csv.reader(f)]
 
@@ -159,7 +167,7 @@ def _parse_inst_keys(csv_file):
                 k['default'] = int(k['default'])
             except:
                 pass
-        for kk in ('from_tcs', 'from_mec', 'from_observer', 'from_pipeline', 'ignore_changes_during_data_capture',
+        for kk in ('from_tcs', 'from_instrument', 'from_observer', 'from_pipeline', 'ignore_changes_during_data_capture',
                    'required_by_pipeline'):
             k[kk] = k[kk] == '1'
         k['has_source'] = int(k['has_source'])
@@ -295,14 +303,12 @@ def observing_metadata_for_timerange(start, duration, metadata_source=None):
         except ValueError:
             missing.append(k)
     if missing:
-        raise ValueError('No metadata for {:.0f} ({:.0f}s):\n\t'.format(start,duration)+
+        raise ValueError('No metadata for {:.0f} ({:.0f}s):\n\t'.format(start, duration) +
                          '\n\t'.join(missing))
     return ret
 
-TIME_KEYS = ('HST-END', 'HST-STR', 'MJD-END', 'MJD-STR', 'UT-END', 'UT-STR')
 
-
-def _mec_time_header(unix_start, unix_stop, metadata):
+def mec_time_builder(unix_start, unix_stop, metadata):
     hst = TimezoneInfo(utc_offset=-10 * u.hour)
     t1 = Time(unix_start, format='unix')
     t2 = Time(unix_stop, format='unix')
@@ -317,26 +323,22 @@ def _mec_time_header(unix_start, unix_stop, metadata):
     return metadata
 
 
-def _xkid_time_header(unix_start, unix_stop, metadata):
+def xkid_time_builder(unix_start, unix_stop, metadata):
     t1 = Time(unix_start, format='unix')
     t2 = Time(unix_stop, format='unix')
-    # hst = TimezoneInfo(utc_offset=-10 * u.hour)
-    # dt1 = datetime.fromtimestamp(t1.value, tz=hst)
-    # dt2 = datetime.fromtimestamp(t2.value, tz=hst)
-    # metadata['HST-END'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt2.hour, dt2.day, dt2.second, dt2.microsecond)
-    # metadata['HST-STR'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt1.hour, dt1.day, dt1.second, dt1.microsecond)
+    tmid = Time((unix_stop + unix_start) / 2, format='unix')
     metadata['MJD-END'] = t2.mjd
     metadata['MJD-STR'] = t1.mjd
+    metadata['MJD'] = tmid.mjd
     metadata['UT-END'] = t2.iso[-12:-1]
     metadata['UT-STR'] = t1.iso[-12:-1]
+    metadata['UT'] = tmid.iso[-12:-1]
+    metadata['DATE-OBS'] = t1.strftime('%Y-%m-%d')
     return metadata
 
 
-_time_key_builder = _mec_time_header
-
-
 def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=MEC_KEY_INFO,
-                 DEFAULT_CARDSET=DEFAULT_CARDSET):
+                 DEFAULT_CARDSET=DEFAULT_CARDSET, TIME_KEYS=MEC_TIME_KEYS, TIME_KEY_BUILDER=mec_time_builder):
     """ Build a header with all of the keys and their default values with optional updates via metadata. Additional
     novel cards may be included via metadata as well.
 
@@ -346,7 +348,6 @@ def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=
 
     raises ValueError if any novel keyword is not a Card
     """
-    global TIME_KEYS
     if metadata is not None:
         unix_start = metadata['UNIXSTR']
         unix_stop = metadata['UNIXEND']
@@ -354,7 +355,7 @@ def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=
             assert [metadata[key] is not None for key in
                     TIME_KEYS], 'header must contain UNIXSTR, UNIXEND or all of {}'.format(TIME_KEYS)
         else:
-            metadata = _time_key_builder(unix_start, unix_stop, metadata)
+            metadata = TIME_KEY_BUILDER(unix_start, unix_stop, metadata)
 
         if 'OBJECT' in metadata and ('RA' not in metadata or 'DEC' not in metadata) and use_simbad:
             getLogger(__name__).info('Fetching coordinates from simbad')
@@ -364,9 +365,9 @@ def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=
             except Exception:
                 getLogger(__name__).warning('Unable to get coordinates for {}'.format(metadata['OBJECT']))
         elif 'RA' not in metadata or 'DEC' not in metadata:
-            metadata['RA']=0.0
-            metadata['DEC']=0.0
-            metadata['EQUINOX']='J2000'
+            metadata['RA'] = 0.0
+            metadata['DEC'] = 0.0
+            metadata['EQUINOX'] = 'J2000'
             metadata['EPOCH'] = 'J2000'
 
     try:
@@ -387,7 +388,7 @@ def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=
         if unknown_keys == 'error':
             raise ValueError(msg)
         elif unknown_keys == 'warn':
-            getLogger(__name__).warning(msg+' for inclusion.')
+            getLogger(__name__).warning(msg + ' for inclusion.')
         elif unknown_keys == 'create':
             for k in bad:
                 metadata[k] = Card(keyword=k, value=metadata[k], comment='No Description')
@@ -403,7 +404,8 @@ def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=
             except AttributeError:
                 val = metadata[k]
             except ValueError:
-                getLogger(__name__).debug('Unit {} not supported by astropy - using raw value'.format(MEC_KEY_INFO[k].unit))
+                getLogger(__name__).debug(
+                    'Unit {} not supported by astropy - using raw value'.format(MEC_KEY_INFO[k].unit))
                 val = metadata[k].value
             try:
                 cardset[k].value = val
@@ -419,7 +421,7 @@ def skycoord_from_metadata(md, force_simbad=False):
             eq = str(md['EQUINOX'])
             if eq[0].isdigit():
                 getLogger(__name__).info('Assuming equinox {} is Julian'.format(eq))
-                eq = 'J'+eq
+                eq = 'J' + eq
             return SkyCoord(md['D_IMRRA'], md['D_IMRDEC'], equinox=eq, unit=('hourangle', 'deg'))
         except (KeyError, ValueError) as e:
             pass
@@ -460,10 +462,10 @@ def build_wcs(md, times, ref_pixels, shape, subtract_parallactic=True, cubeaxis=
         corrected_sky_angles -= apo.parallactic_angle(times, coord).value  # radians
 
     try:
-        scale = [platescale.to(u.deg).value]*2
+        scale = [platescale.to(u.deg).value] * 2
     except AttributeError:
         if platescale > 1:
-            ps = (platescale*u.mas).to(u.deg).value
+            ps = (platescale * u.mas).to(u.deg).value
         elif platescale > .0001:
             ps = (platescale * u.arcsec).to(u.deg).value
         elif platescale < 1e-5:

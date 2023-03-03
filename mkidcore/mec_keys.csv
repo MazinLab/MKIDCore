@@ -1,4 +1,4 @@
-Gen2 Variable,FITS Card ,Type,Unit,From TCS,From MEC,From Observer,From Pipeline,Has Source?,Ignore changes during data capture?,Update Rate,Allowed Values,Default,Required by Pipeline,Description,Comments
+Gen2 Variable,FITS Card ,Type,Unit,From TCS,From Instrument,From Observer,From Pipeline,Has Source?,Ignore changes during data capture?,Update Rate,Allowed Values,Default,Required by Pipeline,Description,Comments
 FITS.SBR.AIRMASS,AIRMASS,F20,NA,1,0,0,0,1,1,0,,999,0,Air Mass at start,
 FITS.SBR.ALTITUDE,ALTITUDE,F20,deg,1,0,0,0,1,1,0,,999,0,Altitude of telescope pointing,
 FITS.SBR.AUTOGUID,AUTOGUID,,NA,1,0,0,0,1,1,0,ON/OFF,UNKNOWN,0,Auto guide on/off,
