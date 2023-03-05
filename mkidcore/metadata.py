@@ -178,6 +178,7 @@ def _parse_inst_keys(csv_file):
 
 MEC_KEY_INFO = _parse_inst_keys('mec_keys.csv')
 XKID_KEY_INFO = _parse_inst_keys('xkid_keys.csv')
+XKID_REDIS_TO_FITS = {v.redis_key: v.name for v in XKID_KEY_INFO.values() if v.redis_key != '.'}
 DEFAULT_MEC_CARDSET = {k: v.fits_card for k, v in MEC_KEY_INFO.items()}
 DEFAULT_XKID_CARDSET = {k: v.fits_card for k, v in XKID_KEY_INFO.items()}
 DEFAULT_CARDSET = DEFAULT_MEC_CARDSET
