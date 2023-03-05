@@ -94,7 +94,7 @@ tcs:dome-state,DOMESTAT,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,Dome State,,,tcsi.teldata
 tcs:rotoff,ROTOFF,F20,deg,1,0,0,0,1,1,,,999,0,Rotator Offset,,,tcsi.telpos.rotoff
 tcs:ha,HA,F20,deg,1,0,0,0,1,1,,,UNKNOWN,0,Hour Angle,,,tcsi.telpos.ha
 magaox:bsname,AOBSNAM,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X Main Beamsplitter,,,stagebs.presetName.XXX
-magaox:position,AOBSPOS,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X Main Beamsplitter Position,,,stagebs.position.current
+magaox:bspos,AOBSPOS,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X Main Beamsplitter Position,,,stagebs.position.current
 magaox:fwpupil:name,AOPUPNAM,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X Coronagraph Pupil Name,,,fwpupil.filterName.XXX
 magaox:fwpupil:counts,AOPUPPOS,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X Coronagraph Pupil Pos,,,fwpupil.counts.current
 magaox:fwfpm:name,AOFPMNAM,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X Coronagraph FPM Name,,,fwfpm.filterName.XXX
@@ -107,7 +107,6 @@ magaox:tweeterSpeck:frequency,AOTWFREQ,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X DM Fre
 magaox:tweeterSpeck:separation,AOTWSEP,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X DM Seperation,,,tweeterSpeck.separation.current
 magaox:tweeterSpeck:angle,AOTWANG,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X DM Angle,,,tweeterSpeck.angle.current
 magaox:tweeterSpeck:amp,AOTWAMP,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X DM Amplitude,,,tweeterSpeck.amp.current
-magaox:tweeterSpeck:crosses,AOTWCROS,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X DM Crosses,,,tweeterSpeck.amp.current
 magaox:stagepiaa1:name,AOPIAA1,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X PIAA1 Name,,,stagepiaa1.presetName.XXX
 magaox:stagepiaa1:position,AOPIAA1P,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X PIAA1 Position,,,stagepiaa1.position.current
 magaox:stagepiaa2:name,AOPIAA2,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X PIAA2 Name,,,stagepiaa2.presetName.XXX
