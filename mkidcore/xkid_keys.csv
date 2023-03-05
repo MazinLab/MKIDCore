@@ -5,7 +5,8 @@ tcs:guiding,AUTOGUID,,NA,1,0,0,0,1,1,0,ON/OFF,UNKNOWN,0,Auto guide on/off,,AUTOG
 tcs:az,AZIMUTH,F20,deg,1,0,0,0,1,1,0,,999,0,Azimuth of telescope pointing,,AZIMUTH,tcsi.teldata.az
 tcs:dec,DEC    ,A12,NA,1,0,1,0,2,1,0,, +00:00:00.00,1,DEC of telescope pointing (+/-DD:MM:SS.SS),,DEC    ,tcsi.telpos.dec
 status:temps:device-stage:temp,DET-TMP,F20,K,0,1,0,0,1,1,0,,0.09,0,Detector temperature (K),,DET-TMP,
-tcs:epoch,EQUINOX,F20,years,1,0,0,0,1,1,0,,999,0,Standard FK5 (years),,EQUINOX,tcsi.telpos.epoch
+tcs:epoch,EQUINOX,F20,years,1,0,0,0,1,1,0,,999,0,Coordinate epoch,,EQUINOX,tcsi.telpos.epoch
+tcs:epoch,EPOCH,F20,years,1,0,0,0,1,1,0,,999,0,Coordinate epoch,,EQUINOX,tcsi.telpos.epoch
 .,EXPTIME,F20,s,0,0,1,0,1,1,0,,1,0,Total integration time of the frame (sec),,EXPTIME,
 status:device:focus:position-mm,FOC-VAL,F20,mm,1,0,0,0,1,1,0,,999,0,Encoder value of the focus unit (mm),,FOC-VAL,
 paths:data-dir,E_CFGDIR,A64,NA,0,1,0,0,1,1,0,,UNKNOWN,0,The readout configuration path,,E_CFGDIR,

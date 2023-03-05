@@ -380,16 +380,6 @@ def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=
     except KeyError:
         pass
 
-    try:
-        DEFAULT_CARDSET['EQUINOX'] = DEFAULT_CARDSET['EPOCH']
-    except KeyError:
-        pass
-
-    try:
-        DEFAULT_CARDSET['EPOCH'] = DEFAULT_CARDSET['EQUINOX']
-    except KeyError:
-        pass
-
     novel = set(metadata.keys()).difference(set(DEFAULT_CARDSET.keys()))
     bad = [k for k in novel if not isinstance(metadata[k], Card)]
     if bad:
