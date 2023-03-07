@@ -19,7 +19,6 @@ from astroplan import Observer
 
 from mkidcore.corelog import getLogger
 
-
 MEC_TIME_KEYS = ('HST-END', 'HST-STR', 'MJD-END', 'MJD-STR', 'UT-END', 'UT-STR')
 XKID_TIME_KEYS = ('MJD', 'MJD-END', 'MJD-STR', 'UNIXEND', 'UNIXSTR', 'UT', 'UT-END', 'UT-STR')
 TIME_KEYS = MEC_TIME_KEYS
@@ -167,8 +166,9 @@ def _parse_inst_keys(csv_file):
                 k['default'] = int(k['default'])
             except:
                 pass
-        for kk in ('from_tcs', 'from_instrument', 'from_observer', 'from_pipeline', 'ignore_changes_during_data_capture',
-                   'required_by_pipeline'):
+        for kk in (
+        'from_tcs', 'from_instrument', 'from_observer', 'from_pipeline', 'ignore_changes_during_data_capture',
+        'required_by_pipeline'):
             k[kk] = k[kk] == '1'
         k['has_source'] = int(k['has_source'])
         k['fits_card'] = k['fits_card'].upper()
@@ -183,6 +183,15 @@ DEFAULT_MEC_CARDSET = {k: v.fits_card for k, v in MEC_KEY_INFO.items()}
 DEFAULT_XKID_CARDSET = {k: v.fits_card for k, v in XKID_KEY_INFO.items()}
 DEFAULT_CARDSET = DEFAULT_MEC_CARDSET
 _metadata = {'files': [], 'data': defaultdict(MetadataSeries)}
+
+INSTRUMENT_KEY_MAP = {
+    'mec': {'time': MEC_TIME_KEYS,
+            'keys': MEC_KEY_INFO,
+            'card': DEFAULT_MEC_CARDSET},
+    'xkid': {'time': XKID_TIME_KEYS,
+             'keys': XKID_KEY_INFO,
+             'card': DEFAULT_XKID_CARDSET}
+}
 
 
 def _process_legacy_record(rdict):
@@ -202,7 +211,7 @@ def _process_legacy_record(rdict):
     return dat
 
 
-def parse_obslog(file):
+def parse_obslog(file, instrument='mec'):
     """
     File consists of a series of JSON dicts in time.
     Translate them into a dict of MetadataSeries with a subset of all the keys (only listed keys included).
@@ -211,6 +220,8 @@ def parse_obslog(file):
     with open(file, 'r') as f:
         lines = f.readlines()
 
+    key_info = INSTRUMENT_KEY_MAP[instrument]['keys']
+
     dat = {}
     for l in lines:
         ldict = json.loads(l)
@@ -218,10 +229,16 @@ def parse_obslog(file):
             ldict = _process_legacy_record(ldict)
 
         from datetime import timezone
-        utc = datetime.strptime(ldict['UTC-STR'], "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
+        try:
+            t = ldict['UTC-STR']
+            fmt = "%Y%m%d%H%M%S"
+        except KeyError:
+            t = (ldict['DATE-OBS'] + ldict['UT-STR'])
+            fmt = "%Y-%m-%d%H:%M:%S.%f"
+        utc = datetime.strptime(t, fmt).replace(tzinfo=timezone.utc)
         for k, v in ldict.items():
             k = k.upper()
-            if k not in MEC_KEY_INFO:
+            if k not in key_info:
                 getLogger(__name__).debug('"{}" is not a known key, ignoring.'.format(k))
             try:
                 dat[k].add(utc.timestamp(), v)
@@ -230,10 +247,11 @@ def parse_obslog(file):
     return dat
 
 
-def load_observing_metadata(path='', files=tuple(), use_cache=True):
+def load_observing_metadata(path='', files=tuple(), use_cache=True, instrument='mec'):
     """Return a list of mkidcore.config.ConfigThings with the contents of the metadata from observing log files"""
     global _metadata
 
+    instrument=instrument.lower()
     # _metadata is a dict of file: parsed_file records
     files = set(files)
     if path:
@@ -249,7 +267,7 @@ def load_observing_metadata(path='', files=tuple(), use_cache=True):
     for f in files:
         if f not in parsed:
             try:
-                recs = parse_obslog(f)
+                recs = parse_obslog(f, instrument=instrument)
             except PermissionError:
                 getLogger(__name__).warning('Insufficient permissions: {}. Skipping.'.format(f))
                 continue
