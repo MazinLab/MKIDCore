@@ -196,7 +196,8 @@ def parse_datadir(path):
         obslogs = glob(os.path.join(d, 'logs', 'obslog*.json'))
         ditherlogs = glob(os.path.join(d, 'logs', 'dither*.log'))
         if os.path.exists(os.path.join(d, 'bin')):
-            bin = glob(os.path.join(d, 'bin', '*.bin'))
+            d = os.path.join(d, 'bin')
+            bin = glob(os.path.join(d, '*.bin'))
         else:
             bin = glob(os.path.join(d, '*.bin'))
         if not bin:
