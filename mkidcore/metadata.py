@@ -176,6 +176,34 @@ def _parse_inst_keys(csv_file):
     return {k['fits_card']: KeyInfo(**k) for k in data if k['fits_card'] not in _FITS_STD}
 
 
+def mec_time_builder(unix_start, unix_stop, metadata):
+    hst = TimezoneInfo(utc_offset=-10 * u.hour)
+    t1 = Time(unix_start, format='unix')
+    t2 = Time(unix_stop, format='unix')
+    dt1 = datetime.fromtimestamp(t1.value, tz=hst)
+    dt2 = datetime.fromtimestamp(t2.value, tz=hst)
+    metadata['HST-END'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt2.hour, dt2.day, dt2.second, dt2.microsecond)
+    metadata['HST-STR'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt1.hour, dt1.day, dt1.second, dt1.microsecond)
+    metadata['MJD-END'] = t2.mjd
+    metadata['MJD-STR'] = t1.mjd
+    metadata['UT-END'] = t2.iso[-12:-1]
+    metadata['UT-STR'] = t1.iso[-12:-1]
+    return metadata
+
+
+def xkid_time_builder(unix_start, unix_stop, metadata):
+    t1 = Time(unix_start, format='unix')
+    t2 = Time(unix_stop, format='unix')
+    tmid = Time((unix_stop + unix_start) / 2, format='unix')
+    metadata['MJD-END'] = t2.mjd
+    metadata['MJD-STR'] = t1.mjd
+    metadata['MJD'] = tmid.mjd
+    metadata['UT-END'] = t2.iso[-12:-1]
+    metadata['UT-STR'] = t1.iso[-12:-1]
+    metadata['UT'] = tmid.iso[-12:-1]
+    metadata['DATE-OBS'] = t1.strftime('%Y-%m-%d')
+    return metadata
+
 MEC_KEY_INFO = _parse_inst_keys('mec_keys.csv')
 XKID_KEY_INFO = _parse_inst_keys('xkid_keys.csv')
 XKID_REDIS_TO_FITS = {v.redis_key: v.name for v in XKID_KEY_INFO.values() if v.redis_key != '.'}
@@ -187,10 +215,12 @@ _metadata = {'files': [], 'data': defaultdict(MetadataSeries)}
 INSTRUMENT_KEY_MAP = {
     'mec': {'time': MEC_TIME_KEYS,
             'keys': MEC_KEY_INFO,
-            'card': DEFAULT_MEC_CARDSET},
+            'card': DEFAULT_MEC_CARDSET,
+            'builder': mec_time_builder},
     'xkid': {'time': XKID_TIME_KEYS,
              'keys': XKID_KEY_INFO,
-             'card': DEFAULT_XKID_CARDSET}
+             'card': DEFAULT_XKID_CARDSET,
+             'builder': xkid_time_builder}
 }
 
 
@@ -281,14 +311,15 @@ def load_observing_metadata(path='', files=tuple(), use_cache=True, instrument='
     return md
 
 
-def validate_metadata_dict(md, warn='all', error=False, allow_missing=tuple()):
+def validate_metadata_dict(md, warn='all', error=False, allow_missing=tuple(), instrument='mec'):
     """ warn and error can be set to 'all'/True, 'required', 'none'/False
     place keys in allow_missing if it is ok that they aren't present."""
     missing, missing_required = [], []
-    for k in MEC_KEY_INFO:
+    instrument = instrument.lower()
+    for k in INSTRUMENT_KEY_MAP[instrument]['keys']:
         if k not in md and k not in allow_missing:
             missing.append(k)
-            if MEC_KEY_INFO[k].required_by_pipeline:
+            if INSTRUMENT_KEY_MAP[instrument]['keys'][k].required_by_pipeline:
                 missing_required.append(k)
     if warn in (True, 'all') and missing:
         getLogger(__name__).warning('Key(s) {} missing'.format(str(missing)))
@@ -325,36 +356,6 @@ def observing_metadata_for_timerange(start, duration, metadata_source=None):
         raise ValueError('No metadata for {:.0f} ({:.0f}s):\n\t'.format(start, duration) +
                          '\n\t'.join(missing))
     return ret
-
-
-def mec_time_builder(unix_start, unix_stop, metadata):
-    hst = TimezoneInfo(utc_offset=-10 * u.hour)
-    t1 = Time(unix_start, format='unix')
-    t2 = Time(unix_stop, format='unix')
-    dt1 = datetime.fromtimestamp(t1.value, tz=hst)
-    dt2 = datetime.fromtimestamp(t2.value, tz=hst)
-    metadata['HST-END'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt2.hour, dt2.day, dt2.second, dt2.microsecond)
-    metadata['HST-STR'] = '{:02d}:{:02d}:{:02d}.{:02d}'.format(dt1.hour, dt1.day, dt1.second, dt1.microsecond)
-    metadata['MJD-END'] = t2.mjd
-    metadata['MJD-STR'] = t1.mjd
-    metadata['UT-END'] = t2.iso[-12:-1]
-    metadata['UT-STR'] = t1.iso[-12:-1]
-    return metadata
-
-
-def xkid_time_builder(unix_start, unix_stop, metadata):
-    t1 = Time(unix_start, format='unix')
-    t2 = Time(unix_stop, format='unix')
-    tmid = Time((unix_stop + unix_start) / 2, format='unix')
-    metadata['MJD-END'] = t2.mjd
-    metadata['MJD-STR'] = t1.mjd
-    metadata['MJD'] = tmid.mjd
-    metadata['UT-END'] = t2.iso[-12:-1]
-    metadata['UT-STR'] = t1.iso[-12:-1]
-    metadata['UT'] = tmid.iso[-12:-1]
-    metadata['DATE-OBS'] = t1.strftime('%Y-%m-%d')
-    return metadata
-
 
 def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=MEC_KEY_INFO,
                  DEFAULT_CARDSET=DEFAULT_CARDSET, TIME_KEYS=MEC_TIME_KEYS, TIME_KEY_BUILDER=mec_time_builder):
