@@ -151,7 +151,6 @@ def _parse_inst_keys(csv_file):
     """
     with open(pkg.resource_filename('mkidcore', csv_file)) as f:
         data = [row for row in csv.reader(f)]
-
     data = [{k.strip().lower().replace(' ', '_').replace('?', ''): v.strip() for k, v in zip(data[0], l)} for l in
             data[1:]]
     for k in data:
@@ -220,8 +219,7 @@ INSTRUMENT_KEY_MAP = {
     'xkid': {'time': XKID_TIME_KEYS,
              'keys': XKID_KEY_INFO,
              'card': DEFAULT_XKID_CARDSET,
-             'builder': xkid_time_builder}
-}
+             'builder': xkid_time_builder}}
 
 
 def _process_legacy_record(rdict):
@@ -249,15 +247,12 @@ def parse_obslog(file, instrument='mec'):
     """
     with open(file, 'r') as f:
         lines = f.readlines()
-
     key_info = INSTRUMENT_KEY_MAP[instrument]['keys']
-
     dat = {}
     for l in lines:
         ldict = json.loads(l)
         if 'device_orientation' in l:
             ldict = _process_legacy_record(ldict)
-
         from datetime import timezone
         try:
             t = ldict['UTC-STR']
@@ -270,6 +265,9 @@ def parse_obslog(file, instrument='mec'):
             k = k.upper()
             if k not in key_info:
                 getLogger(__name__).debug('"{}" is not a known key, ignoring.'.format(k))
+            if k == 'EXPTIME':
+                getLogger(__name__).debug('"{}" will be saves as a singular value and not a series.'.format(k))
+                continue
             try:
                 dat[k].add(utc.timestamp(), v)
             except KeyError:
@@ -280,7 +278,6 @@ def parse_obslog(file, instrument='mec'):
 def load_observing_metadata(path='', files=tuple(), use_cache=True, instrument='mec'):
     """Return a list of mkidcore.config.ConfigThings with the contents of the metadata from observing log files"""
     global _metadata
-
     instrument=instrument.lower()
     # _metadata is a dict of file: parsed_file records
     files = set(files)
