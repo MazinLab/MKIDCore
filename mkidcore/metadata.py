@@ -397,6 +397,16 @@ def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=
     except KeyError:
         pass
 
+    try:
+        metadata['TELESCOP'] = metadata['OBSERVAT']
+    except KeyError:
+        pass
+
+    try:
+        metadata['OBSERVAT'] = metadata['TELESCOP']
+    except KeyError:
+        pass
+
     novel = set(metadata.keys()).difference(set(DEFAULT_CARDSET.keys()))
     bad = [k for k in novel if not isinstance(metadata[k], Card)]
     if bad:

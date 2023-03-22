@@ -75,8 +75,8 @@ status:device:laserflipperduino:laser-1120,CAL1120,F20,NA,0,1,0,0,1,1,,,999,0,11
 status:device:laserflipperduino:laser-1310,CAL1310,F20,NA,0,1,0,0,1,1,,,999,0,1310nm Laser Power,,,
 tcs:slewing,SLEWING,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,Telescope Slewing,,,tcsi.teldata.slewing
 status:device:laserflipperduino:flipper-position,FLPPOS,A12,NA,0,1,0,0,1,1,,,UNKNOWN,0,Calibration Flipper Position,,,
-instrument:conex-dpdx,CDPDX,F20,px/deg,0,1,1,1,3,1,,,999,0,Approximate conex dpixel/thetax,,,
-instrument:conex-dpdy,CDPDY,F20,px/deg,0,1,1,1,3,1,,,999,0,Approximate conex dpixel/thetay,,,
+instrument:conex-dpdx,E_DPDCX,F20,px/deg,0,1,1,1,3,1,,,999,0,Approximate conex dpixel/thetax,,,
+instrument:conex-dpdy,E_DPDCY,F20,px/deg,0,1,1,1,3,1,,,999,0,Approximate conex dpixel/thetay,,,
 tcs:tracking,TRACKING,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,Telescope Tracking State,,,tcsi.teldata.tracking
 tcs:sidereal-time,SIDETIME,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,Site Sidereal Time,,,tcsi.teltime.sidereal_time
 tcs:winddir,OUT-WNDD,F20,deg,1,0,0,0,1,1,,,999,0,Site Wind Direction,,,tcsi.environment.winddir
@@ -112,3 +112,4 @@ magaox:stagepiaa1:position,AOPIAA1P,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X PIAA1 Pos
 magaox:stagepiaa2:name,AOPIAA2,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X PIAA2 Name,,,stagepiaa2.presetName.XXX
 magaox:stagepiaa2:position,AOPIAA2P,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X PIAA2 Position,,,stagepiaa2.position.current
 magaox:camwfs:fps,AOLOOPSP,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X Loop Speed,,,camwfs.fps.current
+.,TELESCOP,A30,NA,1,0,0,0,1,1,0,,Clay,1,Telescope/System which Inst. is attached,,,
