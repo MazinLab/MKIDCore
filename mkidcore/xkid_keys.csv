@@ -1,7 +1,7 @@
 Redis Key,FITS Card ,Type,Unit,From TCS,From Instrument,From Observer,From Pipeline,Has Source,Ignore changes during data capture?,Update Rate,Allowed Values,Default,Required by Pipeline,Description,Comments,MEC FITS Card ,INDI Value
 tcs:airmass,AIRMASS,F20,NA,1,0,0,0,1,1,0,,999,0,Air Mass at start,,AIRMASS,
 tcs:el,ALTITUDE,F20,deg,1,0,0,0,1,1,0,,999,0,Altitude of telescope pointing,,ALTITUDE,tcsi.telpos.el
-tcs:guiding,AUTOGUID,,NA,1,0,0,0,1,1,0,ON/OFF,UNKNOWN,0,Auto guide on/off,,AUTOGUID,tcsi.teldata.guiding
+tcs:guiding,AUTOGUID,bool,NA,1,0,0,0,1,1,0,ON/OFF,UNKNOWN,0,Auto guide on/off,,AUTOGUID,tcsi.teldata.guiding
 tcs:az,AZIMUTH,F20,deg,1,0,0,0,1,1,0,,999,0,Azimuth of telescope pointing,,AZIMUTH,tcsi.teldata.az
 tcs:dec,DEC    ,A12,NA,1,0,1,0,2,1,0,, +00:00:00.00,1,DEC of telescope pointing (+/-DD:MM:SS.SS),,DEC    ,tcsi.telpos.dec
 status:temps:device-stage:temp,DET-TMP,F20,K,0,1,0,0,1,1,0,,0.09,0,Detector temperature (K),,DET-TMP,
