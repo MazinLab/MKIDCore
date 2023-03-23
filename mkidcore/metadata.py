@@ -165,9 +165,9 @@ def _parse_inst_keys(csv_file):
                 k['default'] = int(k['default'])
             except:
                 pass
-        for kk in (
-        'from_tcs', 'from_instrument', 'from_observer', 'from_pipeline', 'ignore_changes_during_data_capture',
-        'required_by_pipeline'):
+        for kk in ('from_tcs', 'from_instrument', 'from_observer',
+                   'from_pipeline', 'ignore_changes_during_data_capture',
+                   'required_by_pipeline'):
             k[kk] = k[kk] == '1'
         k['has_source'] = int(k['has_source'])
         k['fits_card'] = k['fits_card'].upper()
@@ -261,17 +261,31 @@ def parse_obslog(file, instrument='mec'):
             t = (ldict['DATE-OBS'] + ldict['UT-STR'])
             fmt = "%Y-%m-%d%H:%M:%S.%f"
         utc = datetime.strptime(t, fmt).replace(tzinfo=timezone.utc)
+        def typer(k, v):
+            if k not in key_info:
+                return v
+            t = key_info[k].type.lower()[0]
+            if t=='f':
+                t=float
+            elif t=='i':
+                t=int
+            else:
+                t=str
+            try:
+                return t(v)
+            except:
+                return v
         for k, v in ldict.items():
             k = k.upper()
             if k not in key_info:
                 getLogger(__name__).debug('"{}" is not a known key, ignoring.'.format(k))
             if k == 'EXPTIME':
-                getLogger(__name__).debug('"{}" will be saves as a singular value and not a series.'.format(k))
+                getLogger(__name__).debug('"{}" will be save as a singular value and not a series.'.format(k))
                 continue
             try:
-                dat[k].add(utc.timestamp(), v)
+                dat[k].add(utc.timestamp(), typer(k, v))
             except KeyError:
-                dat[k] = MetadataSeries(times=[utc.timestamp()], values=[v])
+                dat[k] = MetadataSeries(times=[utc.timestamp()], values=[typer(k, v)])
     return dat
 
 
