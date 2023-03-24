@@ -21,7 +21,6 @@ from mkidcore.corelog import getLogger
 MEC_TIME_KEYS = ('HST-END', 'HST-STR', 'MJD-END', 'MJD-STR', 'UT-END', 'UT-STR')
 XKID_TIME_KEYS = ('MJD', 'MJD-END', 'MJD-STR', 'UNIXEND', 'UNIXSTR', 'UT', 'UT-END', 'UT-STR')
 TIME_KEYS = MEC_TIME_KEYS
-
 PIPELINE_KEYS = ('E_BASELI', 'E_BMAP', 'E_CFGHSH', 'E_FLTCAL', 'E_GITHSH', 'E_H5FILE',
                  'E_SPECAL', 'E_WAVCAL', 'E_WCSCAL')
 
@@ -344,7 +343,7 @@ def validate_metadata_dict(md, warn='all', error=False, allow_missing=tuple(), i
     return len(missing) != 0
 
 
-def observing_metadata_for_timerange(start, duration, metadata_source=None):
+def observing_metadata_for_timerange(start, duration, metadata_source=None, instrument='mec'):
     """
     Metadata that goes into an H5 consists of records within the duration
 
@@ -355,7 +354,7 @@ def observing_metadata_for_timerange(start, duration, metadata_source=None):
     Does not include defaults key values (they do not have times).
     """
     if isinstance(metadata_source, str):
-        metadata_source = load_observing_metadata(metadata_source)
+        metadata_source = load_observing_metadata(metadata_source, instrument=instrument)
 
     ret = {}
     missing = []
