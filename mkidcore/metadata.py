@@ -252,6 +252,8 @@ def parse_obslog(file, instrument='mec'):
         ldict = json.loads(l)
         if 'device_orientation' in l:
             ldict = _process_legacy_record(ldict)
+        if 'OBSERVAT' in l:
+            ldict['TELESCOP'] = ldict['OBSERVAT']
         from datetime import timezone
         try:
             t = ldict['UTC-STR']
