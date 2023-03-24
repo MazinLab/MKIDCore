@@ -15,8 +15,7 @@ from astropy.time import Time, TimezoneInfo
 import astropy.units as u
 from astropy.coordinates import SkyCoord
 import astropy.wcs as wcs
-from astroplan import Observer
-
+from mkidcore.utils import astropy_observer
 from mkidcore.corelog import getLogger
 
 MEC_TIME_KEYS = ('HST-END', 'HST-STR', 'MJD-END', 'MJD-STR', 'UT-END', 'UT-STR')
@@ -491,7 +490,7 @@ def build_wcs(md, times, ref_pixels, shape, subtract_parallactic=True, cubeaxis=
         return None
 
     try:
-        apo = Observer.at_site(md['TELESCOP'])
+        __, apo = astropy_observer(md['TELESCOP'])
         devang = np.deg2rad(md['E_DEVANG'])
         platescale = md['E_PLTSCL']  # units should be mas/pix
     except KeyError:

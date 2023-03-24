@@ -7,7 +7,8 @@ import ast
 from glob import glob
 from datetime import datetime
 import numpy as np
-
+import astropy
+from astroplan import Observer
 _manager = None
 
 # dict of path roots each a dict with where keys are the night start time and values are dictss
@@ -15,6 +16,16 @@ _manager = None
 # dithers, if present is a parsed collection of the dither log files
 _datadircache = {}
 
+
+def astropy_observer(telescope):
+    """wrapper for astroplan.Observer and astropy.coordinates.EarthLocation"""
+    if telescope.lower() == 'clay':
+        telescope = 'LAS CAMPANAS OBSERVATORY'
+    else:
+        telescope = telescope
+    site = astropy.coordinates.EarthLocation.of_site(telescope)
+    apo = Observer.at_site(telescope)
+    return site, apo
 
 def next_second(x: datetime):
     """Return the next second"""
