@@ -50,7 +50,7 @@ tcs:zd,ZD     ,F20,deg,1,0,0,0,1,1,0,,999,0,Zenith distance at typical time (deg
 .,DETGAIN,A16,NA,0,0,0,1,1,1,0,,1,0,Detector gain,,DETGAIN,
 .,FRATE,F16,Hz,0,0,0,1,1,1,0,,1,0,Frame rate of the acquisition (Hz),,FRATE,
 .,GAIN,F20,e/ADU,0,0,0,1,1,1,0,,1,0,AD conversion factor (electron/ADU),,GAIN,
-.,INSTRUME,A8,NA,0,0,0,1,1,1,0,,XKID,1,Instrument name,fixed SCExAO,INSTRUME,
+.,INSTRUME,A8,NA,0,0,0,1,1,1,0,,XKID,1,Instrument name,fixed XKID,INSTRUME,
 .,E_BASELI,bool,NA,0,0,0,1,1,1,0,TRUE/FALSE,FALSE,1,Whether or not the baseline was remove from the data,,E_BASELI,
 datasaver:beammap,E_BMAP,A64,NA,0,1,0,1,2,1,0,,,1,UUID of beammap,,E_BMAP,
 .,E_CFGHSH,A64,NA,0,0,0,1,1,1,0,,,1,Hash of config producing the output,,E_CFGHSH,
