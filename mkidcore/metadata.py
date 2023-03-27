@@ -220,7 +220,6 @@ INSTRUMENT_KEY_MAP = {
              'card': DEFAULT_XKID_CARDSET,
              'builder': xkid_time_builder,
              'wcs':{'RA': 'RA', 'DEC': 'DEC'}}}
-}
 
 
 def _process_legacy_record(rdict):
