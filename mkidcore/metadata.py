@@ -213,11 +213,14 @@ INSTRUMENT_KEY_MAP = {
     'mec': {'time': MEC_TIME_KEYS,
             'keys': MEC_KEY_INFO,
             'card': DEFAULT_MEC_CARDSET,
-            'builder': mec_time_builder},
+            'builder': mec_time_builder,
+            'wcs':{'RA': 'D_IMRRA', 'DEC': 'D_IMRDEC','ANG': 'D_IMRPAD'}},
     'xkid': {'time': XKID_TIME_KEYS,
              'keys': XKID_KEY_INFO,
              'card': DEFAULT_XKID_CARDSET,
-             'builder': xkid_time_builder}}
+             'builder': xkid_time_builder,
+             'wcs':{'RA': 'RA', 'DEC': 'DEC'}}}
+}
 
 
 def _process_legacy_record(rdict):
@@ -368,6 +371,7 @@ def observing_metadata_for_timerange(start, duration, metadata_source=None, inst
                          '\n\t'.join(missing))
     return ret
 
+
 def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=MEC_KEY_INFO,
                  DEFAULT_CARDSET=DEFAULT_CARDSET, TIME_KEYS=MEC_TIME_KEYS, TIME_KEY_BUILDER=mec_time_builder):
     """ Build a header with all of the keys and their default values with optional updates via metadata. Additional
@@ -463,7 +467,8 @@ def skycoord_from_metadata(md, force_simbad=False):
             if eq[0].isdigit():
                 getLogger(__name__).info('Assuming equinox {} is Julian'.format(eq))
                 eq = 'J' + eq
-            return SkyCoord(md['D_IMRRA'], md['D_IMRDEC'], equinox=eq, unit=('hourangle', 'deg'))
+            wcskeys = INSTRUMENT_KEY_MAP[md['INSTRUME']]['wcs']
+            return SkyCoord(md[wcskeys['RA']], md[wcskeys['DEC']], equinox=eq, unit=('hourangle', 'deg'))
         except (KeyError, ValueError) as e:
             pass
     try:
