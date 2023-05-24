@@ -266,7 +266,10 @@ def parse_obslog(file, instrument='mec'):
         def typer(k, v):
             if k not in key_info:
                 return v
-            t = key_info[k].type.lower()[0]
+            try:
+                t = key_info[k].type.lower()[0]
+            except IndexError:
+                t = None
             if t=='f':
                 t=float
             elif t=='i':
