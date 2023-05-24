@@ -418,14 +418,21 @@ def build_header(metadata=None, unknown_keys='error', use_simbad=True, KEY_INFO=
         pass
 
     try:
-        metadata['TELESCOP'] = metadata['OBSERVAT']
+        telescope = metadata['TELESCOP']
     except KeyError:
+        telescope = None
         pass
 
     try:
-        metadata['OBSERVAT'] = metadata['TELESCOP']
+        observat = metadata['OBSERVAT']
     except KeyError:
+        observat = None
         pass
+
+    if telescope and not telescope.startswith('#'):
+        metadata['OBSERVAT'] = telescope
+    if observat and not observat.startswith('#'):
+        metadata['TELESCOP'] = observat
 
     novel = set(metadata.keys()).difference(set(DEFAULT_CARDSET.keys()))
     bad = [k for k in novel if not isinstance(metadata[k], Card)]
@@ -484,7 +491,7 @@ def skycoord_from_metadata(md, force_simbad=False):
 
 def build_wcs(md, times, ref_pixels, shape, subtract_parallactic=True, cubeaxis=None):
     """
-    Build WCS from a metadata dictonary, must have keys RA, Dec EQUINOX or OBJECT (for simbad target), TELESCOP,
+    Build WCS from a metadata dictionary, must have keys RA, Dec EQUINOX or OBJECT (for simbad target), TELESCOP,
     E_DEVANG, and E_PLTSCL. ref_pixels may be an iterable of reference pixels, set naxis to three for an (uninitialized)
     3rd axis
 
