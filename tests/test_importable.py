@@ -1,7 +1,7 @@
 import unittest
 from unittest import TestCase
 
-class TestSmoke(TestCase):
+class TestImportable(TestCase):
     def test_imports(self):
         import mkidcore
         import mkidcore.config

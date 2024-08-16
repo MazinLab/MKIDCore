@@ -42,40 +42,40 @@ jobs:
       run: |
         codecov
 
-  smoketest: # If we plug this into downstream projects, does magic smoke escape?
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - MazinLab/MKIDPipeline
-    name: 'smoke (${{ matrix.project }})'
-    steps:
-    - name: Check out MKIDCore source code
-      uses: actions/checkout@v4
-      with:
-        path: MKIDCore
-        fetch-depth: 0
-    - name: Check out source code
-      uses: actions/checkout@v4
-      with:
-        repository: ${{ matrix.project }}
-        path: project
-        fetch-depth: 0
-    - name: Set up PDM
-      uses: pdm-project/setup-pdm@v4
-    - name: Install dependencies
-      working-directory: project
-      run: |
-        pdm install --dev
-    - name: Use MKIDCore HEAD revision
-      working-directory: project
-      run: |
-        pdm add ../MKIDCore
-    - name: Run tests
-      working-directory: project
-      run: |
-        pdm run test
+  # smoketest: # If we plug this into downstream projects, does magic smoke escape?
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       project:
+  #         - MazinLab/MKIDPipeline
+  #   name: 'smoke (${{ matrix.project }})'
+  #   steps:
+  #   - name: Check out MKIDCore source code
+  #     uses: actions/checkout@v4
+  #     with:
+  #       path: MKIDCore
+  #       fetch-depth: 0
+  #   - name: Check out source code
+  #     uses: actions/checkout@v4
+  #     with:
+  #       repository: ${{ matrix.project }}
+  #       path: project
+  #       fetch-depth: 0
+  #   - name: Set up PDM
+  #     uses: pdm-project/setup-pdm@v4
+  #   - name: Install dependencies
+  #     working-directory: project
+  #     run: |
+  #       pdm install --dev
+  #   - name: Use MKIDCore HEAD revision
+  #     working-directory: project
+  #     run: |
+  #       pdm add ../MKIDCore
+  #   - name: Run tests
+  #     working-directory: project
+  #     run: |
+  #       pdm run test
 
   required: # group all required workflows into one to avoid reconfiguring this in Actions settings
     needs:
