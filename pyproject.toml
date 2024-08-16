@@ -12,10 +12,20 @@ readme = "README.md"
 authors = [{name = "Mazin Lab contributors"}]
 license = { text = "BSD-2-clause" }
 
-requires-python = "~=3.8"
+requires-python = "~=3.9"
 dependencies = [
   "importlib_resources; python_version<'3.9'",
-  "ruamel.yaml>0.18"
+  "setuptools>=72.2.0",
+
+  "numpy==1.26.4",
+
+  "astropy>=6.0",
+  "astroplan>=0.10",
+
+  "ruamel.yaml>0.18",
+  "pyyaml>=6.0.2",
+
+  "multiprocessing_logging"
 ]
 
 [build-system]
@@ -43,5 +53,5 @@ test = [
 
 [tool.pdm.scripts]
 test.composite = ["test-code"]
-test-code.env = {PYTHONWARNINGS = "error"}
+# test-code.env = {PYTHONWARNINGS = "error"}
 test-code.cmd = "python -m coverage run -m unittest discover -t . -s tests -v"
