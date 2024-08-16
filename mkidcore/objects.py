@@ -178,7 +178,10 @@ class Beammap(object):
             try:
                 bmap.loadFrequencies(d['freqfiles'])
             except Exception:
-                getLogger(__name__).error('Failed to load frequencies into beammap', exc_info=True)
+                if d['freqfiles'] == "":
+                    getLogger(__name__).info("No frequency files specified for this beammap!")
+                else:
+                    getLogger(__name__).warning('Failed to load frequencies into beammap', exc_info=True)
 
         return bmap
 

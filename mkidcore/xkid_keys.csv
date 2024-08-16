@@ -1,0 +1,115 @@
+Redis Key,FITS Card ,Type,Unit,From TCS,From Instrument,From Observer,From Pipeline,Has Source,Ignore changes during data capture?,Update Rate,Allowed Values,Default,Required by Pipeline,Description,Comments,MEC FITS Card ,INDI Value
+tcs:airmass,AIRMASS,F20,NA,1,0,0,0,1,1,0,,999,0,Air Mass at start,,AIRMASS,
+tcs:el,ALTITUDE,F20,deg,1,0,0,0,1,1,0,,999,0,Altitude of telescope pointing,,ALTITUDE,tcsi.telpos.el
+tcs:guiding,AUTOGUID,bool,NA,1,0,0,0,1,1,0,ON/OFF,UNKNOWN,0,Auto guide on/off,,AUTOGUID,tcsi.teldata.guiding
+tcs:az,AZIMUTH,F20,deg,1,0,0,0,1,1,0,,999,0,Azimuth of telescope pointing,,AZIMUTH,tcsi.teldata.az
+tcs:dec,DEC    ,A12,NA,1,0,1,0,2,1,0,, +00:00:00.00,1,DEC of telescope pointing (+/-DD:MM:SS.SS),,DEC    ,tcsi.telpos.dec
+status:temps:device-stage:temp,DET-TMP,F20,K,0,1,0,0,1,1,0,,0.09,0,Detector temperature (K),,DET-TMP,
+tcs:epoch,EQUINOX,F20,years,1,0,0,0,1,1,0,,999,0,Coordinate epoch,,EQUINOX,tcsi.telpos.epoch
+tcs:epoch,EPOCH,F20,years,1,0,0,0,1,1,0,,999,0,Coordinate epoch,,EQUINOX,tcsi.telpos.epoch
+.,EXPTIME,F20,s,0,0,1,0,1,1,0,,1,0,Total integration time of the frame (sec),,EXPTIME,
+status:device:focus:position-mm,FOC-VAL,F20,mm,1,0,0,0,1,1,0,,999,0,Encoder value of the focus unit (mm),,FOC-VAL,
+paths:data-dir,E_CFGDIR,A64,NA,0,1,0,0,1,1,0,,UNKNOWN,0,The readout configuration path,,E_CFGDIR,
+status:device:conex:position-x,E_CONEXX,F20,step,0,1,1,0,2,0,change,,999,1,The X position of the conex ,,E_CONEXX,
+status:device:conex:position-y,E_CONEXY,F20,step,0,1,1,0,2,0,change,,999,1,The Y position of the conex,,E_CONEXY,
+datasaver:dark,E_DARK,A64,NA,0,0,1,0,1,1,0,,none,1,UUID of dark frame ,,E_DARK,
+gen2:firmware-version,E_FIRMV,A64,NA,0,1,0,0,1,1,0,,none,0,Git hash of readout software and firmware,,E_FIRMV,
+datasaver:flat,E_FLTCAL,A64,NA,0,0,1,0,1,1,0,,none,1,UUID of MKID Flatfield solution ,,E_FLTCAL,
+status:device:filterwheel:filter,E_FLTPOS,A16,NA,0,1,0,0,1,1,0,,999,0,The selected filter,,E_FLTPOS,
+.,E_SPECAL,A64,NA,0,0,1,0,1,1,0,,none,1,UUID of the applied spectrophotometirc calibration,,E_SPECAL,
+.,E_WAVCAL,A64,NA,0,0,1,0,1,1,0,,none,1,UUID of MKID Wavelength solution ,,E_WAVCAL,
+.,E_WCSCAL,A64,NA,0,0,1,0,1,1,0,,none,1,UUID of the WCS calibration,,E_WCSCAL,
+.,MJD    ,F20,J2000,0,1,0,0,1,1,0,,999,0,Modified Julian Day at typical time,,MJD    ,
+.,OBJECT ,A30,NA,1,0,1,0,2,1,0,,UNKNOWN,1,Object,,OBJECT ,
+.,OBSERVAT,A20,NA,1,0,0,0,1,1,0,,Clay,0,Observatory,,OBSERVAT,
+.,OBSERVER,A50,NA,1,0,0,0,1,1,0,,MazinLab,0,Observer,,OBSERVER,
+tcs:humidity,OUT-HUM,F20,%,1,0,0,0,1,1,0,,999,0,Outside humidity ( %),,OUT-HUM,tcsi.environment.humidity
+tcs:temp-amb,OUT-TMP,F20,degC,1,0,0,0,1,1,0,,999,0,Outside temperature (K),,OUT-TMP,tcsi.environment.temp-amb
+tcs:wind,OUT-WND,F20,m/s,1,0,0,0,1,1,0,,999,0,Outside wind speed (m/sec),,OUT-WND,tcsi.environment.wind
+tcs:ra,RA     ,A12,NA,1,0,1,0,2,1,0,,00:00:00.000,1,RA of telescope pointing (HH:MM:SS.SSS),,RA     ,tcsi.telpos.ra
+.,UNIXEND,F20,s,0,1,1,0,2,1,0,,,1,UNIX time at exposure start (UTC) from atomic clock,,UNIXEND,
+.,UNIXSTR,F20,s,0,1,1,0,2,1,0,,,1,UNIX time at exposure start (UTC)  from atomic clock,,UNIXSTR,
+.,UT     ,A12,NA,0,1,0,0,1,1,0,,UNKNOWN,0,HH:MM:SS.SS typical UTC at exposure,,UT     ,
+tcs:zd,ZD     ,F20,deg,1,0,0,0,1,1,0,,999,0,Zenith distance at typical time (deg),,ZD     ,tcsi.teldata.zd
+.,BSCALE,F20,NA,0,0,0,1,1,1,0,,,0,FITS Standard Real=fits-value*BSCALE+BZERO,,BSCALE,
+.,BUNIT,A10,NA,0,0,0,1,1,1,0,,,0,FITS Standard Unit of original values,,BUNIT,
+.,BZERO,F20,NA,0,0,0,1,1,1,0,,,0,FITS Standard Real=fits-value*BSCALE+BZERO,,BZERO,
+.,CDELT,F20,NA,0,0,0,1,1,1,0,,,0,FITS WCS Standard,,CDELT,
+.,CROP_EN1,I16,pixel,0,0,0,1,1,1,0,,80,0,End in X of the cropped window (pixel),,CROP_EN1,
+.,CROP_EN2,I16,pixel,0,0,0,1,1,1,0,,125,0,End in Y of the cropped window (pixel),,CROP_EN2,
+.,CROP_OR1,I16,pixel,0,0,0,1,1,1,0,,0,0,Origin in X of the cropped window (pixel),,CROP_OR1,
+.,CROP_OR2,I16,pixel,0,0,0,1,1,1,0,,0,0,Origin in Y of the cropped window (pixel),,CROP_OR2,
+.,CROPPED,A16,NA,0,0,0,1,1,1,0,,full frame,0,Image windowed or full frame,,CROPPED,
+.,CRPIX,F20,NA,0,0,0,1,1,1,0,,,0,FITS WCS Standard,,CRPIX,
+.,CRVAL,F20,NA,0,0,0,1,1,1,0,,,0,FITS WCS Standard,,CRVAL,
+.,CTYPE,A10,NA,0,0,0,1,1,1,0,,,0,FITS WCS Standard,,CTYPE,
+.,CUNIT,A10,NA,0,0,0,1,1,1,0,,,0,FITS WCS Standard,,CUNIT,
+.,DATA-TYP,A30,NA,0,0,0,1,1,1,0,,,0,Exp. type,,DATA-TYP,
+.,DATE-OBS,A30,NA,1,0,0,1,2,1,0,,,0,UT date of Observation (yyyy-mm-dd),,DATE-OBS,
+.,DETECTOR,A20,NA,0,0,0,1,1,1,0,,Faceless,0,Name of the detector,,DETECTOR,
+.,DETGAIN,A16,NA,0,0,0,1,1,1,0,,1,0,Detector gain,,DETGAIN,
+.,FRATE,F16,Hz,0,0,0,1,1,1,0,,1,0,Frame rate of the acquisition (Hz),,FRATE,
+.,GAIN,F20,e/ADU,0,0,0,1,1,1,0,,1,0,AD conversion factor (electron/ADU),,GAIN,
+.,INSTRUME,A8,NA,0,0,0,1,1,1,0,,XKID,1,Instrument name,fixed XKID,INSTRUME,
+.,E_BASELI,bool,NA,0,0,0,1,1,1,0,TRUE/FALSE,FALSE,1,Whether or not the baseline was remove from the data,,E_BASELI,
+datasaver:beammap,E_BMAP,A64,NA,0,1,0,1,2,1,0,,,1,UUID of beammap,,E_BMAP,
+.,E_CFGHSH,A64,NA,0,0,0,1,1,1,0,,,1,Hash of config producing the output,,E_CFGHSH,
+instrument:conex-ref-x,E_CXREFX,F20,step,0,1,1,1,3,1,0,,999,1,Conex X position when source is at reference point,,E_CXREFX,
+instrument:conex-ref-y,E_CXREFY,F20,step,0,1,1,1,3,1,0,,999,1,Conex Y position when source is at reference point,,E_CXREFY,
+instrument:device-angle,E_DEVANG,F20,deg,0,1,1,1,3,1,0,,-48,1,MKID device mounting angle,,E_DEVANG,
+.,E_GITHSH,A8,NA,0,1,0,1,2,1,0,,,1,Git hash of software producing the file,,E_GITHSH,
+.,E_H5FILE,A64,none,0,0,0,1,1,1,0,,,1,The h5 file name,,E_H5FILE,
+instrument:platescale,E_PLTSCL,F20,mas,0,1,1,1,3,1,0,,0.0104,1,MKID device plate scale,,E_PLTSCL,
+instrument:pixel-ref-x,E_PREFX,F20,pixel,0,1,1,1,3,1,0,,999,1,The X position of the centroid of the source reference position ,,E_PREFX,
+instrument:pixel-ref-y,E_PREFY,F20,pixel,0,1,1,1,3,1,0,,999,1,The Y position of the centroid of the source reference position ,,E_PREFY,
+.,MJD-END,F20,J2000,0,1,0,1,2,1,0,,,0,Modified Julian Day at exposure end,,MJD-END,
+.,MJD-STR,F20,J2000,0,1,0,1,2,1,0,,,0,Modified Julian Day at exposure start,,MJD-STR,
+.,PC,F20,NA,0,0,0,1,1,1,0,,,0,FITS WCS Standard,,PC,
+.,UT-END ,A12,NA,0,1,0,1,2,1,0,,,0,HH:MM:SS.SS UTC at exposure end,,UT-END ,
+.,UT-STR ,A12,NA,0,1,0,1,2,1,0,,,0,HH:MM:SS.SS UTC at exposure start,,UT-STR ,
+status:device:heatswitch:position,HEATPOS,A12,NA,0,1,0,0,1,1,,,UNKNOWN,0,Heatswitch State,,,
+status:device:laserflipperduino:laser-808,CAL808,F20,NA,0,1,0,0,1,1,,,999,0,808nm Laser Power,,,
+status:device:laserflipperduino:laser-904,CAL904,F20,NA,0,1,0,0,1,1,,,999,0,904nm Laser Power,,,
+status:device:laserflipperduino:laser-980,CAL980,F20,NA,0,1,0,0,1,1,,,999,0,980nm Laser Power,,,
+status:device:laserflipperduino:laser-1120,CAL1120,F20,NA,0,1,0,0,1,1,,,999,0,1120nm Laser Power,,,
+status:device:laserflipperduino:laser-1310,CAL1310,F20,NA,0,1,0,0,1,1,,,999,0,1310nm Laser Power,,,
+tcs:slewing,SLEWING,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,Telescope Slewing,,,tcsi.teldata.slewing
+status:device:laserflipperduino:flipper-position,FLPPOS,A12,NA,0,1,0,0,1,1,,,UNKNOWN,0,Calibration Flipper Position,,,
+instrument:conex-dpdx,E_DPDCX,F20,px/deg,0,1,1,1,3,1,,,999,0,Approximate conex dpixel/thetax,,,
+instrument:conex-dpdy,E_DPDCY,F20,px/deg,0,1,1,1,3,1,,,999,0,Approximate conex dpixel/thetay,,,
+tcs:tracking,TRACKING,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,Telescope Tracking State,,,tcsi.teldata.tracking
+tcs:sidereal-time,SIDETIME,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,Site Sidereal Time,,,tcsi.teltime.sidereal_time
+tcs:winddir,OUT-WNDD,F20,deg,1,0,0,0,1,1,,,999,0,Site Wind Direction,,,tcsi.environment.winddir
+tcs:catalog-object,CATOBJ,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,Catalog Object,,,tcsi.catalog.object
+tcs:catalog-dec,CATDEC,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,Catalog Declination,,,tcsi.catdata.dec
+tcs:catalog-epoch,CATEPOCH,F20,NA,1,0,0,0,1,1,,,999,0,Catalog Epoch,,,tcsi.catdata.epoch
+tcs:catalog-ra,CATRA,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,Catalog RA,,,tcsi.catdata.ra
+tcs:seeing-dimm-fwhm,DIMMSEE,F20,arcsec,1,0,0,0,1,1,,,999,0,Seeing Monitor FWHM,,,tcsi.seeing.dimm_fwhm
+tcs:seeing-dimm-fwhm-corr,DIMMSCOR,F20,NA,1,0,0,0,1,1,,,999,0,Seeing Monitor Elevation Correction,,,tcsi.seeing.dimm_fwhm_corr
+tcs:seeing-el,SEEEL,F20,deg,1,0,0,0,1,1,,,UNKNOWN,0,Seeing Monitor Elevation,,,tcsi.seeing.mag2_el
+tcs:seeing-fwhm,SEEING,F20,arcsec,1,0,0,0,1,1,,,999,0,Seeing FWHM,,,tcsi.seeing.mag2_fwhm
+tcs:seeing-fwhm-corr,SEECOR,F20,NA,1,0,0,0,1,1,,,999,0,Seeing Elevation Correction,,,tcsi.seeing.mag2_fwhm_corr
+tcs:seeing-time,SEETIM,F20,NA,1,0,0,0,1,1,,,UNKNOWN,0,Seeing Measurement Time,,,tcsi.seeing.mag2_time
+tcs:dome-state,DOMESTAT,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,Dome State,,,tcsi.teldata.dome_state
+tcs:rotoff,ROTOFF,F20,deg,1,0,0,0,1,1,,,999,0,Rotator Offset,,,tcsi.telpos.rotoff
+tcs:ha,HA,F20,deg,1,0,0,0,1,1,,,UNKNOWN,0,Hour Angle,,,tcsi.telpos.ha
+magaox:bsname,AOBSNAM,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X Main Beamsplitter,,,stagebs.presetName.XXX
+magaox:bspos,AOBSPOS,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X Main Beamsplitter Position,,,stagebs.position.current
+magaox:fwpupil:name,AOPUPNAM,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X Coronagraph Pupil Name,,,fwpupil.filterName.XXX
+magaox:fwpupil:counts,AOPUPPOS,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X Coronagraph Pupil Pos,,,fwpupil.counts.current
+magaox:fwfpm:name,AOFPMNAM,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X Coronagraph FPM Name,,,fwfpm.filterName.XXX
+magaox:fwfpm:counts,AOFPMPOS,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X Coronagraph FPM Pos.,,,fwfpm.counts.current
+magaox:fwlyot:name,AOLYTNAM,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X Lyot Coronagraph Name,,,fwlyot.filterName.XXX
+magaox:fwlyot:counts,AOLYTPOS,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X Lyot Coronagraph Pos,,,fwlyot.counts.current
+magaox:tweeterSpeck:modulating,AOTWMODU,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X DM Modulation,,,tweeterSpeck.modulating.toggle
+magaox:tweeterSpeck:trigger,AOTWTRIG,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X DM Triggered,,,tweeterSpeck.trigger.toggle
+magaox:tweeterSpeck:frequency,AOTWFREQ,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X DM Frequency,,,tweeterSpeck.frequency.current
+magaox:tweeterSpeck:separation,AOTWSEP,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X DM Seperation,,,tweeterSpeck.separation.current
+magaox:tweeterSpeck:angle,AOTWANG,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X DM Angle,,,tweeterSpeck.angle.current
+magaox:tweeterSpeck:amp,AOTWAMP,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X DM Amplitude,,,tweeterSpeck.amp.current
+magaox:stagepiaa1:name,AOPIAA1,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X PIAA1 Name,,,stagepiaa1.presetName.XXX
+magaox:stagepiaa1:position,AOPIAA1P,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X PIAA1 Position,,,stagepiaa1.position.current
+magaox:stagepiaa2:name,AOPIAA2,A12,NA,1,0,0,0,1,1,,,UNKNOWN,0,MagAO-X PIAA2 Name,,,stagepiaa2.presetName.XXX
+magaox:stagepiaa2:position,AOPIAA2P,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X PIAA2 Position,,,stagepiaa2.position.current
+magaox:camwfs:fps,AOLOOPSP,F20,NA,1,0,0,0,1,1,,,999,0,MagAO-X Loop Speed,,,camwfs.fps.current
+.,TELESCOP,A30,NA,1,0,0,0,1,1,0,,Clay,1,Telescope/System which Inst. is attached,,,

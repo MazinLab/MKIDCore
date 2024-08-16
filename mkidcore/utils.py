@@ -7,13 +7,32 @@ import ast
 from glob import glob
 from datetime import datetime
 import numpy as np
-
+import astropy
+from astroplan import Observer
 _manager = None
 
 # dict of path roots each a dict with where keys are the night start time and values are dictss
 # obslogs (list of obslog files), ditherlogs (list of dither log files), bindir (the bin dir)
 # dithers, if present is a parsed collection of the dither log files
 _datadircache = {}
+
+
+def astropy_observer(telescope):
+    """wrapper for astroplan.Observer and astropy.coordinates.EarthLocation"""
+    if telescope.lower() == 'clay':
+        telescope = 'LAS CAMPANAS OBSERVATORY'
+    else:
+        telescope = telescope
+    site = astropy.coordinates.EarthLocation.of_site(telescope)
+    apo = Observer.at_site(telescope)
+    return site, apo
+
+def next_second(x: datetime):
+    """Return the next second"""
+    x = round(x.hour * 3600 + x.minute * 60 + x.second + x.microsecond + .5)
+    if x >= 24 * 3600:
+        x = 0
+    return x
 
 
 def mjd_to(mjd, zone):
@@ -172,16 +191,26 @@ def derangify(s, delim=','):
 def parse_datadir(path):
     """Look through a data directory and return paths for nights, logs, and obslogs"""
     pathdata = {}
+    date = ''
     for d in (d for d in glob(os.path.join(path, '*')) if os.path.isdir(d)):
         night = os.path.relpath(d, path)
         try:
             date = datetime.strptime(night, '%Y%m%d')
         except ValueError:
-            getLogger(__name__).debug('Skipping {}'.format(d))
-            continue
+            pass
+        if not date:
+            try:
+                date = datetime.strptime(night, 'ut%Y%m%d')
+            except ValueError:
+                getLogger(__name__).debug('Skipping {}'.format(d))
+                continue
         obslogs = glob(os.path.join(d, 'logs', 'obslog*.json'))
         ditherlogs = glob(os.path.join(d, 'logs', 'dither*.log'))
-        bin = glob(os.path.join(d, '*.bin'))
+        if os.path.exists(os.path.join(d, 'bin')):
+            d = os.path.join(d, 'bin')
+            bin = glob(os.path.join(d, '*.bin'))
+        else:
+            bin = glob(os.path.join(d, '*.bin'))
         if not bin:
             if obslogs or ditherlogs:
                 getLogger(__name__).warning('No binfiles in {} despite presence of logs'.format(d))

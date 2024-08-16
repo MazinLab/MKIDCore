@@ -552,8 +552,12 @@ def load(file, namespace=None):
         with open(file, 'r') as f:
             ret = yaml.load(f)
         try:
-             with open(ret.roaches.value, 'r') as f:
-                 ret.update('roaches', yaml.load(f))
+            if os.path.exists(ret.roaches.value):
+                roach_f = ret.roaches.value
+            else:
+                roach_f = os.path.join(os.path.dirname(file), ret.roaches.value)
+            with open(roach_f, 'r') as f:
+                ret.update('roaches', yaml.load(f))
         except (KeyError, AttributeError):
             pass
         return ret
