@@ -528,7 +528,7 @@ def _consolidate_roach_config(cd):
             cd.register('roachnum',rnum)
             roaches[rnum] = cd[k]
             cd.unregister(k)
-        if re.match('sweep\d+', k):
+        if re.match(r'sweep\d+', k):
             sweeps.append(cd[k])
             getLogger('mkidcore.config').debug('Matched sweep#: {}'.format(cd[k]))
             cd[k].register('num', int(k[5:]))

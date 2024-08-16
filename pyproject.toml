@@ -15,6 +15,7 @@ license = { text = "BSD-2-clause" }
 requires-python = "~=3.8"
 dependencies = [
   "importlib_resources; python_version<'3.9'",
+  "ruamel.yaml>0.18"
 ]
 
 [build-system]
