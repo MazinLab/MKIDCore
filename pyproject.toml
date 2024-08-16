@@ -14,12 +14,11 @@ license = { text = "BSD-2-clause" }
 
 requires-python = "~=3.9"
 dependencies = [
-  "importlib_resources; python_version<'3.9'",
   "setuptools>=72.2.0",
 
-  "numpy==1.26.4",
+  "numpy==1.26.4", # We pin this because we build a C extension, when you update this also update the build system depend
 
-  "astropy>=6.0",
+  "astropy>=5.0",
   "astroplan>=0.10",
 
   "ruamel.yaml>0.18",
@@ -29,7 +28,7 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["pdm-backend~=2.3.0"]
+requires = ["pdm-backend~=2.3.0", "setuptools>=72.2.0", "numpy==1.26.4", "Cython"]
 build-backend = "pdm.backend"
 
 [tool.pdm]
@@ -37,6 +36,7 @@ build-backend = "pdm.backend"
 ignore_package_warnings = ["sphinx*", "alabaster"]
 
 [tool.pdm.build]
+run-setuptools = true
 includes = ["mkidcore/"]
 
 source-includes = [
