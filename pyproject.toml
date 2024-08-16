@@ -16,7 +16,7 @@ requires-python = "~=3.9"
 dependencies = [
   "setuptools>=72.2.0",
 
-  "numpy==1.26.4", # We pin this because we build a C extension, when you update this also update the build system depend
+  "numpy>=1.24", # We pin this because we build a C extension, when you update this also update the build system depend
 
   "astropy>=5.0",
   "astroplan>=0.10",
@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["pdm-backend~=2.3.0", "setuptools>=72.2.0", "numpy==1.26.4", "Cython"]
+requires = ["pdm-backend~=2.3.0", "setuptools>=72.2.0", "numpy>=2.0", "Cython"]
 build-backend = "pdm.backend"
 
 [tool.pdm]
