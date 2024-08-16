@@ -164,7 +164,7 @@ def roachnum(fl, band, instrument='MEC'):
 
 def guessFeedline(filename):
     try:
-        flNum = int(re.search('fl\d', filename, re.IGNORECASE).group()[-1])
+        flNum = int(re.search(r'fl\d', filename, re.IGNORECASE).group()[-1])
     except AttributeError:
         try:
             ip = int(os.path.splitext(filename)[0][-3:])
