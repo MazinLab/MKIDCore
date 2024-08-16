@@ -1,0 +1,46 @@
+# Project metadata
+
+[tool.pdm.version]
+source = "scm"
+
+[project]
+dynamic = ["version"]
+
+name = "mkidcore"
+description = "Mazin Lab Core MKID Library"
+readme = "README.md"
+authors = [{name = "Mazin Lab contributors"}]
+license = { text = "BSD-2-clause" }
+
+requires-python = "~=3.8"
+dependencies = [
+  "importlib_resources; python_version<'3.9'",
+]
+
+[build-system]
+requires = ["pdm-backend~=2.3.0"]
+build-backend = "pdm.backend"
+
+[tool.pdm]
+# Remove this once we no longer support Python 3.8.
+ignore_package_warnings = ["sphinx*", "alabaster"]
+
+[tool.pdm.build]
+includes = ["mkidcore/"]
+
+source-includes = [
+  ".gitignore",
+  ".coveragerc",
+]
+
+# Development workflow configuration
+[tool.pdm.dev-dependencies]
+# This version requirement needs to be synchronized with the one in pyproject.toml above!
+test = [
+  "coverage",
+]
+
+[tool.pdm.scripts]
+test.composite = ["test-code"]
+test-code.env = {PYTHONWARNINGS = "error"}
+test-code.cmd = "python -m coverage run -m unittest discover -t . -s tests -v"
