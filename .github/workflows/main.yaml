@@ -40,7 +40,7 @@ jobs:
         pdm run test
     - name: Submit code coverage
       run: |
-        codecov
+        codecov -t ${{ secrets.CODECOV_TOKEN }}
 
   # smoketest: # If we plug this into downstream projects, does magic smoke escape?
   #   runs-on: ubuntu-latest
