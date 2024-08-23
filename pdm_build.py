@@ -7,7 +7,7 @@ mkidbin_extension = Extension(
     sources=["mkidcore/binfile/mkidbin.pyx", "mkidcore/binfile/binprocessor.c"],
     library_dirs=["mkidcore/binfile"],  # Location of .o file
     include_dirs=["mkidcore/binfile", numpy.get_include()],  # Location of the .h file
-    extra_compile_args=["-std=c99", "-O3", '-pthread']
+    extra_compile_args=["-std=gnu99", "-O3", '-pthread']
 )
 
 
