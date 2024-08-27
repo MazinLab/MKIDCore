@@ -12,19 +12,15 @@ readme = "README.md"
 authors = [{name = "Mazin Lab contributors"}]
 license = { text = "BSD-2-clause" }
 
-requires-python = "~=3.9"
+requires-python = "~=3.10"
 dependencies = [
-  "setuptools>=72.2.0",
-
-  "numpy>=1.24", # We pin this because we build a C extension, when you update this also update the build system depend
-
-  "astropy>=5.0",
-  "astroplan>=0.10",
-
-  "ruamel.yaml>0.18",
-  "pyyaml>=6.0.2",
-
-  "multiprocessing_logging"
+    "setuptools>=72.2.0",
+    "numpy>=1.24", # We pin this because we build a C extension, when you update this also update the build system depend
+    "astropy>=5.0",
+    "astroplan>=0.10",
+    "ruamel.yaml>0.18",
+    "pyyaml>=6.0.2",
+    "multiprocessing_logging",
 ]
 
 [build-system]
