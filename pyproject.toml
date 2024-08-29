@@ -47,7 +47,14 @@ test = [
   "coverage",
 ]
 
+docs = [
+  "pdoc>=14.6.1"
+]
+
 [tool.pdm.scripts]
-test.composite = ["test-code"]
+test.composite = ["test-code", "test-docs"]
 # test-code.env = {PYTHONWARNINGS = "error"}
 test-code.cmd = "python -m coverage run -m unittest discover -t . -s tests -v"
+test-docs.cmd = "pdoc mkidcore -o docs"
+document.cmd = "pdoc mkidcore -o docs"
+document-live.cmd = "pdoc mkidcore"
