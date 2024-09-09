@@ -4,7 +4,7 @@ import copy
 import os
 from glob import glob
 import json
-import pkg_resources as pkg
+from importlib import resources as rs
 import csv
 from bisect import bisect
 from collections import defaultdict
@@ -147,7 +147,7 @@ def _parse_inst_keys(csv_file):
     """ spaces to _ ? to null strip whitespace, keys are column 0 values are dict of other columns
     all keys forced to lower case
     """
-    with open(pkg.resource_filename('mkidcore', csv_file)) as f:
+    with open(rs.files('mkidcore').joinpath(csv_file)) as f:
         data = [row for row in csv.reader(f)]
     data = [{k.strip().lower().replace(' ', '_').replace('?', ''): v.strip() for k, v in zip(data[0], l)} for l in
             data[1:]]

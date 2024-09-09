@@ -1,7 +1,6 @@
 from __future__ import print_function
 import re
 import ruamel.yaml
-from pkg_resources import Requirement, resource_filename
 from mkidcore.utils import caller_name
 from mkidcore.corelog import getLogger
 from multiprocessing import RLock
@@ -15,6 +14,7 @@ try:
 except ImportError:
     import configparser
     from io import StringIO
+
 
 RESERVED = ('._c', '._a')  #Internal keys hidden from the user for storing comments and
 
@@ -30,10 +30,6 @@ class _BeamDict(dict):
 
 
 DEFAULT_BMAP_CFGFILES = _BeamDict()
-
-
-def defaultconfigfile():
-    return resource_filename(Requirement.parse("mkidcore"), "default.yml")
 
 
 def extract_from_node(loader, keys, node):
