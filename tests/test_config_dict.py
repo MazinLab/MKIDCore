@@ -1,7 +1,7 @@
 import unittest
 from unittest import TestCase
 import ruamel.yaml
-from mkidcore.config import ConfigThing, RESERVED, defaultconfigfile
+from mkidcore.config import ConfigThing, RESERVED
 
 yaml = ruamel.yaml.YAML()
 
