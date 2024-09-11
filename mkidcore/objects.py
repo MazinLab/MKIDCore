@@ -2,7 +2,7 @@ import os
 import numpy as np
 from mkidcore.instruments import DEFAULT_ARRAY_SIZES
 from glob import glob
-import pkg_resources as pkg
+from importlib import resources as rs
 import mkidcore.config
 from mkidcore.corelog import getLogger
 import copy
@@ -10,7 +10,6 @@ from mkidcore.pixelflags import beammap as beamMapFlags
 
 from datetime import datetime
 import json
-
 
 class TimeStream(object):
     """
@@ -151,10 +150,10 @@ class Beammap(object):
                 raise Exception('The dimensions of the beammap entered do not match the beammap read in')
         else:
             try:
-                self._load(pkg.resource_filename(__name__, '{}.bmap'.format(default.lower())))
+                self._load(rs.files(__name__).joinpath('{}.bmap'.format(default.lower())))
                 self.ncols, self.nrows = DEFAULT_ARRAY_SIZES[default.lower()]
             except IOError:
-                opt = ', '.join([f.rstrip('.bmap').upper() for f in glob(pkg.resource_filename(__name__, '*.bmap'))])
+                opt = ', '.join([f.rstrip('.bmap').upper() for f in glob(rs.files(__name__).joinpath('*.bmap'))])
                 raise ValueError('Unknown default beampmap "{}". Options: {}'.format(default, opt))
 
     @classmethod
